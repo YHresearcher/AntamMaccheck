@@ -1,28 +1,31 @@
 # An Tâm Mac check
 
-Ứng dụng macOS dùng để hỗ trợ kiểm tra MacBook cũ trước khi mua, phát triển độc lập bằng SwiftUI.
+Ứng dụng kiểm tra Mac cũ trước khi mua của **Vi tính An Tâm** — https://vitinhantam.com.
 
-## Mục tiêu
-- Giao diện sáng, màu cam của Vi tính An Tâm
-- Không chạy bài kiểm tra lúc mở ứng dụng
-- Có nút tròn **Bắt đầu** và **Dừng**
-- Tự đọc thông số cơ bản qua `system_profiler`, `sysctl`
-- Quy trình kiểm tra ngoại vi có xác nhận kết quả và ghi chú lỗi
-- Báo cáo JSON lưu vào thư mục do người dùng chọn (không mặc định ghi vào máy người bán)
-- Kết luận phân biệt **đã kiểm tra**, **chưa kiểm tra** và **cảnh báo**
+## Thiết kế v0.1
+- SwiftUI, nền sáng và điểm nhấn cam
+- Sidebar: Tổng quan / Phần cứng / Kiểm tra / Báo cáo
+- **Không tự chạy kiểm tra khi mở app**
+- Start/Stop là hai nút tròn
+- Đọc thông tin hệ thống cơ bản từ macOS khi bấm **Đọc cấu hình**
+- Kiểm tra các hạng mục chức năng theo wizard và ghi nhận: Ổn / Có lỗi / Chưa thử
+- Tự động đánh dấu chưa đủ dữ liệu nếu bỏ dở; xuất JSON qua hộp thoại lưu tệp
+- Footer có hyperlink Vi tính An Tâm
 
-## Cách build
-GitHub → Actions → Build An Tam Mac check → Run workflow → tải artifact.
+## Giới hạn hiện tại
+Đây là **bản khởi tạo chạy thử giao diện**, chưa phải phần mềm kiểm tra tự động hoàn chỉnh. Wizard hiện ghi nhận kết quả do người dùng xác nhận; chưa tự thực hiện test loa/micro, màn hình, bàn phím, SMART, CPU/GPU stress hay xác minh Activation Lock/MDM. Không được hiểu kết luận từ wizard là chứng nhận Mac an toàn để mua.
 
-Trên Mac có Xcode Command Line Tools:
-```sh
-swift build -c release
-swift run AnTamMacCheck
-```
+Logo PNG gốc chưa được đưa vào repo. App đã có mã hiển thị `AnTamLogo.png` nếu resource tồn tại và dùng biểu tượng mặc định nếu chưa có. Địa chỉ shop cũng đang để trống để tránh ghi sai; sẽ cập nhật sau khi xác nhận nguyên văn.
 
-## Giới hạn bản khởi tạo
-Phiên bản 0.1 là nền tảng ứng dụng **chưa phải công cụ kiểm định MacBook hoàn chỉnh**. Không có stress CPU/GPU, SMART sâu, phát hiện Activation Lock/MDM chắc chắn hay bảo đảm mọi thiết bị ngoại vi tốt. Đọc được thông số không đồng nghĩa linh kiện đã qua thử nghiệm. Phần kiểm tra chức năng yêu cầu người dùng xác nhận. Bản tải qua GitHub Actions **chưa ký số/notarize** nên macOS có thể cảnh báo khi mở.
+## Build trên GitHub
+1. Vào Actions → **Build An Tam Mac check** → Run workflow.
+2. Tải artifact ZIP sau khi workflow thành công.
+3. Giải nén trên Mac tương thích, mở ứng dụng. Bản này chưa ký số và chưa notarize, Gatekeeper có thể cảnh báo.
 
-Dự án này hiện chưa nhập mã của Aman Check, mac-check hay battery-info-mac. Trước khi tái sử dụng mã bên thứ ba cần kiểm tra giấy phép và thông báo bản quyền.
+Có thể chạy locally trên macOS 13+ có Swift toolchain: `swift run AnTamMacCheck`.
 
-Thương hiệu: **Vi tính An Tâm** — https://vitinhantam.com
+## Kế hoạch tiếp theo
+Kết nối adapters cho IOKit/System Profiler, kiểm tra pin/SSD và các trạng thái bảo mật ở mức được phép; phát triển bài kiểm tra thực tế có Stop All; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
+
+## Giấy phép
+Dự án mới chưa nhập source của Aman Check, mac-check hoặc Battery Monitor. Bất kỳ mã bên thứ ba nào được đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
