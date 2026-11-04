@@ -1,0 +1,40 @@
+name: Build An Tam Mac check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Compile app
+        run: swift build -c release
+      - name: Create application bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/An Tam Mac check.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp ".build/release/AnTamMacCheck" "$APP/Contents/MacOS/AnTamMacCheck"
+          cp "resources/Info.plist" "$APP/Contents/Info.plist"
+          if [ -f "resources/AnTamLogo.png" ]; then
+            cp "resources/AnTamLogo.png" "$APP/Contents/Resources/AnTamLogo.png"
+          fi
+          chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
+          plutil -lint "$APP/Contents/Info.plist"
+          ditto -c -k --keepParent "$APP" "AnTam-Mac-check-macOS.zip"
+      - name: Upload unsigned development build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnTam-Mac-check-macOS
+          path: AnTam-Mac-check-macOS.zip
+          if-no-files-found: error
