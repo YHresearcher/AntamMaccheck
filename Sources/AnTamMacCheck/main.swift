@@ -8,8 +8,19 @@ private let backgroundColor = Color(red: 0.97, green: 0.98, blue: 0.99)
 enum Shop {
     static let name = "Vi tính An Tâm"
     static let website = URL(string: "https://vitinhantam.com")!
-    // Chưa xác minh địa chỉ từ hình đính kèm. Không tự suy đoán địa chỉ.
-    static let address = ""
+    static let branch1 = "52 Nguyễn Cửu Vân, P. Long An, T. Tây Ninh"
+    static let branch2 = "218/3 đường số 11, phường Thủ Đức, TP. Hồ Chí Minh"
+    static let warranty = "Bảo hành 6 tháng nguyên máy"
+    static let address = "CN1: \(branch1) • CN2: \(branch2)"
+}
+
+struct MDMCheck: Codable {
+    var status: String = "Chưa kiểm tra"
+    var enrollment: String = "Chưa xác định"
+    var automatedEnrollment: String = "Chưa xác định"
+    var checkedAt: String = ""
+    var details: String = ""
+    var warning: String = "Lệnh macOS chỉ kiểm tra trạng thái hiện tại, không bảo đảm máy không thuộc Apple Business/School Manager. Hãy xác minh với người bán qua quy trình kích hoạt hợp lệ."
 }
 
 struct Result: Identifiable, Codable {
@@ -21,6 +32,8 @@ struct Result: Identifiable, Codable {
 
 @MainActor final class Inspection: ObservableObject {
     @Published var hardware: [String: String] = [:]
+    @Published var mdm = MDMCheck()
+    @Published var checkingMDM = false
     @Published var results: [Result] = []
     @Published var running = false
     @Published var step = 0
@@ -29,14 +42,77 @@ struct Result: Identifiable, Codable {
     let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan"]
 
     var conclusion: String {
+        if mdm.status == "Phát hiện quản lý" {
+            return "Máy đang có dấu hiệu quản lý từ xa. An Tâm khuyên bạn chưa mua cho đến khi người bán chứng minh quyền sở hữu và gỡ quản lý hợp lệ nhé!"
+        }
         if results.contains(where: { $0.status == "Có lỗi" }) {
             return "Máy có một vài điểm cần để mắt tới! Xem lỗi đã ghi nhận trước khi xuống tiền nhé."
         }
         if results.count < checks.count || results.contains(where: { $0.status == "Chưa thử" }) {
             return "Chiếc Mac vẫn còn vài bí mật! Mình chưa đủ dữ liệu để đưa ra kết luận đâu nhé."
         }
-        return "Các mục bạn đã xác nhận đều ổn! Tuy vậy, chưa có kiểm tra SMART, khóa máy và stress test chuyên sâu."
+        return "Các mục bạn đã xác nhận đều ổn! Tuy nhiên, còn cần xác minh MDM/Activation Lock và kiểm tra SMART, stress test trước khi quyết định mua nhé."
     }
+    func checkMDM() {
+        guard !checkingMDM else { return }
+        checkingMDM = true
+        mdm = MDMCheck(status: "Đang kiểm tra")
+        // Chạy lệnh ở background để giao diện không bị đứng.
+        DispatchQueue.global(qos: .userInitiated).async {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/profiles")
+            process.arguments = ["status", "-type", "enrollment"]
+            let output = Pipe()
+            process.standardOutput = output
+            process.standardError = output
+            var raw = ""
+            var exitCode: Int32 = -1
+            do {
+                try process.run()
+                let bytes = output.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
+                exitCode = process.terminationStatus
+                raw = String(data: bytes, encoding: .utf8) ?? ""
+            } catch {
+                raw = "Không chạy được lệnh profiles: \(error.localizedDescription)"
+            }
+
+            func value(for key: String) -> String {
+                let pattern = "(?im)^\\s*" + NSRegularExpression.escapedPattern(for: key) + "\\s*:\\s*(Yes|No)\\b"
+                guard let regex = try? NSRegularExpression(pattern: pattern),
+                      let match = regex.firstMatch(in: raw, range: NSRange(raw.startIndex..., in: raw)),
+                      let range = Range(match.range(at: 1), in: raw) else { return "Chưa xác định" }
+                return raw[range].lowercased() == "yes" ? "Có" : "Không"
+            }
+            let enrollment = value(for: "MDM enrollment")
+            let automated = value(for: "Enrolled via DEP")
+            let status: String
+            if exitCode != 0 {
+                status = "Không đọc được trạng thái"
+            } else if enrollment == "Có" || automated == "Có" {
+                status = "Phát hiện quản lý"
+            } else if enrollment == "Không" && automated == "Không" {
+                status = "Chưa phát hiện quản lý hiện tại"
+            } else {
+                status = "Chưa đủ dữ liệu"
+            }
+            let result = MDMCheck(
+                status: status,
+                enrollment: enrollment,
+                automatedEnrollment: automated,
+                checkedAt: ISO8601DateFormatter().string(from: Date()),
+                details: raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            DispatchQueue.main.async {
+                self.mdm = result
+                self.checkingMDM = false
+                self.info = status == "Phát hiện quản lý"
+                    ? "An Tâm thấy dấu hiệu MDM/ADE! Cần xác minh kỹ trước khi mua nha."
+                    : "Đã đọc trạng thái MDM từ macOS. Nhớ xác minh với người bán nữa nhé."
+            }
+        }
+    }
+
     func readHardware() {
         let queries: [(String, String, [String])] = [
             ("Model", "/usr/sbin/sysctl", ["-n", "hw.model"]),
@@ -97,11 +173,21 @@ struct Result: Identifiable, Codable {
             "shop": Shop.name,
             "website": Shop.website.absoluteString,
             "address": Shop.address,
+            "branches": [Shop.branch1, Shop.branch2],
+            "warranty": Shop.warranty,
+            "mdm": [
+                "status": mdm.status,
+                "enrollment": mdm.enrollment,
+                "automated_enrollment": mdm.automatedEnrollment,
+                "checked_at": mdm.checkedAt,
+                "command_output": mdm.details,
+                "warning": mdm.warning
+            ],
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "hardware": hardware,
             "tests": results.map { ["name": $0.name, "status": $0.status, "note": $0.note] },
             "conclusion": conclusion,
-            "limitations": "Các bài kiểm tra chức năng được xác nhận thủ công; chưa đánh giá SMART, MDM hay Activation Lock."
+            "limitations": "Các bài kiểm tra chức năng được xác nhận thủ công; MDM chỉ được kiểm tra từ trạng thái profiles hiện tại, không thay cho xác minh ADE/Activation Lock với người bán; chưa đánh giá SMART hoặc stress test."
         ]
         do {
             let bytes = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
@@ -150,10 +236,14 @@ struct MainView: View {
                 Spacer()
                 Link(Shop.name, destination: Shop.website).font(.caption)
                     .padding(.horizontal, 16)
-                if !Shop.address.isEmpty {
-                    Text(Shop.address).font(.caption2).foregroundStyle(.secondary)
-                        .padding(.horizontal, 16)
-                }
+                Text("CN1: \(Shop.branch1)")
+                    .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 16)
+                Text("CN2: \(Shop.branch2)")
+                    .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 16)
+                Text(Shop.warranty).font(.caption2).foregroundStyle(anTamOrange)
+                    .padding(.horizontal, 16)
+                Link("Tham quan shop", destination: Shop.website)
+                    .font(.caption.weight(.semibold)).padding(.horizontal, 16)
             }.padding(.bottom, 16)
         } detail: {
             ScrollView {
@@ -177,9 +267,7 @@ struct MainView: View {
                     Divider()
                     HStack {
                         Link(Shop.name, destination: Shop.website)
-                        if !Shop.address.isEmpty {
-                            Text("• \(Shop.address)").foregroundStyle(.secondary)
-                        }
+                        Text("• \(Shop.warranty)").foregroundStyle(.secondary)
                         Spacer()
                         Text("An Tâm Mac check").foregroundStyle(.secondary)
                     }.font(.caption)
@@ -238,10 +326,50 @@ struct MainView: View {
                 ProgressView(value: Double(inspection.results.count), total: Double(inspection.checks.count))
                 Text(inspection.info).font(.callout).foregroundStyle(.secondary)
             }
+            mdmCard
+            shopCard
             card {
                 Text("An Tâm nhắn bạn").font(.headline)
                 Text(inspection.conclusion)
             }
+        }
+    }
+    private var mdmCard: some View {
+        card {
+            HStack {
+                Label("MDM & Remote Management", systemImage: "lock.shield")
+                    .font(.headline)
+                Spacer()
+                Button(inspection.checkingMDM ? "Đang kiểm tra..." : "Kiểm tra MDM") {
+                    inspection.checkMDM()
+                }.disabled(inspection.checkingMDM)
+            }
+            Text(inspection.mdm.status)
+                .font(.title3.bold())
+                .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : anTamOrange)
+            HStack {
+                Text("MDM enrollment: \(inspection.mdm.enrollment)")
+                Spacer()
+                Text("Automated Enrollment: \(inspection.mdm.automatedEnrollment)")
+            }.font(.caption).foregroundStyle(.secondary)
+            Text(inspection.mdm.warning).font(.caption).foregroundStyle(.secondary)
+            if !inspection.mdm.details.isEmpty {
+                DisclosureGroup("Xem kết quả lệnh macOS") {
+                    Text(inspection.mdm.details)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+            }
+        }
+    }
+    private var shopCard: some View {
+        card {
+            Text("Ghé Vi tính An Tâm chơi nha! 🧡").font(.headline)
+            Text("Chi nhánh 1: \(Shop.branch1)").font(.subheadline)
+            Text("Chi nhánh 2: \(Shop.branch2)").font(.subheadline)
+            Text(Shop.warranty).font(.subheadline.bold()).foregroundStyle(anTamOrange)
+            Link("Tham quan shop", destination: Shop.website)
+                .font(.subheadline.weight(.semibold))
         }
     }
     private var hardware: some View {
@@ -290,9 +418,11 @@ struct MainView: View {
             card {
                 Text("Đánh giá mua máy").font(.headline)
                 Text(inspection.conclusion)
-                Text("Không đánh giá lỗi SSD, pin, iCloud/MDM nếu chưa có dữ liệu xác thực.")
+                Text("Chưa đánh giá SSD, pin, Activation Lock; MDM chỉ phản ánh kết quả lệnh macOS tại thời điểm kiểm tra.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            mdmCard
+            shopCard
             card {
                 Text("Kết quả đã ghi nhận").font(.headline)
                 if inspection.results.isEmpty {
