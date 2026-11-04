@@ -433,7 +433,7 @@ struct MainView: View {
                         HStack {
                             Text(result.name).fontWeight(.medium)
                             Spacer()
-                            Text(result.status).foregroundStyle(result.status == "Có lỗi" ? .red : .secondary)
+                            Text(result.status).foregroundStyle(result.status == "Có lỗi" ? Color.red : Color.secondary)
                         }
                         if !result.note.isEmpty { Text(result.note).font(.caption).foregroundStyle(.secondary) }
                     }
