@@ -9,7 +9,8 @@ final class DiagnosticSession: ObservableObject {
     @Published var attempted: Set<String> = []
     @Published var capturedKeys: Set<UInt16> = []
     @Published var dragSamples = 0
-    @Published var colorIndex = 0
+    @Published var colorIndex = -1
+    @Published var speakerState = "Chưa phát âm thanh"
     @Published var recorderState = "Chưa ghi âm"
     @Published var cameraState = "Chưa mở camera"
     @Published var portsText = "Chưa đọc danh sách thiết bị kết nối."
@@ -18,13 +19,10 @@ final class DiagnosticSession: ObservableObject {
 
     private var recorder: AVAudioRecorder?
     private var player: AVAudioPlayer?
-    private let voice = NSSpeechSynthesizer()
+    private var speakerPlayer: AVAudioPlayer?
     private var cameraSession: AVCaptureSession?
 
-    let colors: [(String, Color)] = [
-        ("Trắng", .white), ("Đen", .black), ("Đỏ", .red),
-        ("Xanh lá", .green), ("Xanh dương", .blue)
-    ]
+    let colorCount = 12
 
     func mark(_ name: String) { attempted.insert(name) }
     func reset() {
@@ -33,7 +31,9 @@ final class DiagnosticSession: ObservableObject {
         attempted.removeAll()
         capturedKeys.removeAll()
         dragSamples = 0
-        colorIndex = 0
+        colorIndex = -1
+        speakerPlayer?.stop()
+        speakerState = "Chưa phát âm thanh"
         recorderState = "Chưa ghi âm"
         cameraState = "Chưa mở camera"
         portsText = "Chưa đọc danh sách thiết bị kết nối."
@@ -41,16 +41,29 @@ final class DiagnosticSession: ObservableObject {
     func canConfirm(_ name: String) -> Bool {
         switch name {
         case "Bàn phím": return !capturedKeys.isEmpty
-        case "Trackpad": return dragSamples > 0
-        case "Màn hình": return attempted.contains("Màn hình") && colorIndex == colors.count - 1
+        case "Trackpad": return dragSamples >= 10
+        case "Màn hình": return attempted.contains("Màn hình") && colorIndex == colorCount - 1
         case "Loa", "Microphone", "Webcam", "Cổng kết nối": return attempted.contains(name)
         default: return true // Ngoại quan cần xác nhận bằng mắt
         }
     }
     func playSpeaker() {
-        attempted.insert("Loa")
-        voice.stopSpeaking()
-        voice.startSpeaking("An Tâm Mac check. Hãy nghe âm thanh từ cả hai loa, kiểm tra có rè hoặc mất tiếng không.")
+        guard let path = Bundle.main.url(forResource: "StereoSpeakerTest", withExtension: "wav") else {
+            speakerState = "Thiếu file stereo test WAV trong app. Không được đánh dấu Đạt."
+            return
+        }
+        do {
+            speakerPlayer = try AVAudioPlayer(contentsOf: path)
+            speakerPlayer?.prepareToPlay()
+            if speakerPlayer?.play() == true {
+                attempted.insert("Loa")
+                speakerState = "Đang phát nhạc thử: kênh trái trước, kênh phải sau. Hãy nghe từng bên."
+            } else {
+                speakerState = "Không phát được file test. Kiểm tra thiết bị đầu ra âm thanh."
+            }
+        } catch {
+            speakerState = "Lỗi phát âm thanh: \(error.localizedDescription)"
+        }
     }
     func startRecording() {
         AVCaptureDevice.requestAccess(for: .audio) { allowed in
@@ -186,30 +199,37 @@ struct DiagnosticToolView: View {
         VStack(alignment: .leading, spacing: 12) {
             switch name {
             case "Màn hình":
-                Text("Hiển thị lần lượt 5 vùng màu lớn để tìm điểm chết và ám màu. Muốn kiểm tra toàn bộ bề mặt, hãy phóng to cửa sổ.")
-                Button("Mở bài test 5 màu") {
+                Text("Kiểm tra toàn màn hình với 12 màu (RGB, CMY, nhiều mức xám, trắng/đen). Dùng phím ← / → để chuyển, Esc để thoát.")
+                Button("Mở test toàn màn hình") {
                     tools.mark("Màn hình")
-                    tools.colorIndex = 0
-                    displaySheet = true
+                    tools.colorIndex = -1
+                    FullscreenColorTester.shared.open { index in tools.colorIndex = index }
                 }
-                Text("Đã xem \(min(tools.colorIndex + 1, 5))/5 màu.").font(.caption)
+                Text("Đã xem \(max(0, tools.colorIndex + 1))/\(tools.colorCount) màu.")
+                    .font(.caption)
             case "Bàn phím":
-                Text("Nhấp vào vùng dưới rồi nhấn lần lượt các phím thực tế. Phím đã nhận: \(tools.capturedKeys.count)")
+                Text("Bàn phím ảo sáng lên khi phím vật lý được nhận. Nhấp vùng dưới để nhận bàn phím.")
+                VirtualKeyboardView(pressed: tools.capturedKeys)
                 KeyCapture { code in tools.capturedKeys.insert(code) }
-                    .frame(height: 70).frame(maxWidth: .infinity)
-                    .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(Text("Nhấn phím ở đây").allowsHitTesting(false))
-                Text("Kiểm tra từng phím còn cần đối chiếu toàn bộ bàn phím; app không tự kết luận đạt.").font(.caption)
+                    .frame(height: 48).frame(maxWidth: .infinity)
+                    .background(Color.orange.opacity(0.11), in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(Text("Nhấp đây rồi gõ phím • Đã nhận \(tools.capturedKeys.count) phím")
+                        .allowsHitTesting(false))
+                Text("Bố cục hiển thị ANSI phổ biến. Một số phím Fn và phím đặc biệt do macOS xử lý trước.")
+                    .font(.caption).foregroundStyle(.secondary)
             case "Trackpad":
-                Text("Dùng trackpad kéo liên tục trong vùng bên dưới; thử cả nhấp, cuộn và đa điểm bằng tay.")
-                RoundedRectangle(cornerRadius: 12).fill(Color.teal.opacity(0.14))
-                    .frame(height: 105)
-                    .overlay(Text("↔  Kéo thử trên trackpad (\(tools.dragSamples))"))
-                    .gesture(DragGesture(minimumDistance: 5).onChanged { _ in tools.dragSamples += 1 })
-                Text("Chuột rời cũng có thể tạo thao tác kéo; xác nhận trackpad thực bằng quan sát.").font(.caption)
+                Text("Chỉ cần di chuyển ngón tay trên trackpad, KHÔNG cần đè click. Thử nhấp, kéo, cuộn và đa điểm riêng.")
+                PointerMotionCapture { tools.dragSamples += 1 }
+                    .frame(height: 160).frame(maxWidth: .infinity)
+                    .background(Color.teal.opacity(0.13), in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(Text("Di chuyển con trỏ trong vùng này — \(tools.dragSamples) lượt di chuyển")
+                        .allowsHitTesting(false))
+                Text("Chuột rời cũng tạo chuyển động tương tự. Việc xác nhận trackpad thật vẫn cần người kiểm tra.")
+                    .font(.caption).foregroundStyle(.secondary)
             case "Loa":
-                Text("Phát câu thử qua thiết bị âm thanh đang chọn. Nghe cả hai bên, kiểm tra rè/méo.")
-                Button("▶ Phát tiếng thử") { tools.playSpeaker() }
+                Text("Phát bản nhạc kiểm tra stereo gốc: giai điệu kênh TRÁI, sau đó kênh PHẢI. Chú ý loa rè/méo và âm lượng từng bên.")
+                Button("♫ Phát file nhạc test trái/phải") { tools.playSpeaker() }
+                Text(tools.speakerState).font(.caption).foregroundStyle(.secondary)
             case "Microphone":
                 Text("Ghi âm từ mic được chọn, sau đó nghe lại để xác nhận chất lượng.")
                 HStack {
@@ -240,22 +260,6 @@ struct DiagnosticToolView: View {
             default:
                 Text("Kiểm tra bằng mắt: vỏ máy, bản lề, điểm móp, dấu tháo lắp, pin phồng, cổng và ngoại quan. Không tự xác nhận.")
             }
-        }
-        .sheet(isPresented: $displaySheet) {
-            VStack {
-                HStack {
-                    Text("Màu \(tools.colorIndex + 1)/5 — \(tools.colors[tools.colorIndex].0)")
-                        .font(.headline)
-                    Spacer()
-                    Button("Đóng") { displaySheet = false }
-                }.padding(12)
-                Rectangle().fill(tools.colors[tools.colorIndex].1)
-                    .overlay(Rectangle().stroke(Color.gray.opacity(0.5), lineWidth: 1))
-                Button(tools.colorIndex == 4 ? "Hoàn tất quan sát" : "Màu tiếp theo →") {
-                    if tools.colorIndex < 4 { tools.colorIndex += 1 }
-                    else { displaySheet = false }
-                }.padding(12)
-            }.frame(minWidth: 630, minHeight: 460)
         }
     }
 }
