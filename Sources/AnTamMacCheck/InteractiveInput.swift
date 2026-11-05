@@ -49,6 +49,10 @@ struct PointerMotionCapture: NSViewRepresentable {
 }
 final class MotionNSView: NSView {
     var onMotion: (() -> Void)?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.acceptsMouseMovedEvents = true
+    }
     private var lastPoint: NSPoint?
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
