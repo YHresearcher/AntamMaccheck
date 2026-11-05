@@ -18,6 +18,13 @@ jobs:
         run: swift --version
       - name: Compile app
         run: swift build -c release
+      - name: Retrieve original An Tam logo (unaltered)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output resources/AnTamLogo.png \
+            "https://raw.githubusercontent.com/YHresearcher/PCcheck/main/%E9%AA%8C%E6%9C%BA%E8%BD%AF%E4%BB%B6/Assets/logo-antam.png"
+          test "$(git hash-object resources/AnTamLogo.png)" = "9260dda7a289927bc0a68cd8a65df1df77797b31"
       - name: Create application bundle
         shell: bash
         run: |
