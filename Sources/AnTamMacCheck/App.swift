@@ -211,7 +211,7 @@ struct Result: Identifiable, Codable {
         running = false
         info = "Đã dừng kiểm tra. Những mục chưa thử sẽ không được tính là đạt nha."
     }
-    func exportJSON() {
+    func exportJSON(health: HardwareHealthSnapshot? = nil) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "AnTam-Mac-check-report.json"
         panel.allowedContentTypes = [.json]
@@ -233,6 +233,20 @@ struct Result: Identifiable, Codable {
             ],
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "hardware": hardware,
+            "hardware_health": [
+                "battery": [
+                    "present": health?.battery.present as Any? ?? NSNull(),
+                    "cycle_count": health?.battery.cycleCount as Any? ?? NSNull(),
+                    "design_mAh": health?.battery.designMAh as Any? ?? NSNull(),
+                    "full_charge_mAh": health?.battery.maxMAh as Any? ?? NSNull(),
+                    "estimated_health_percent": health?.battery.healthPercent as Any? ?? NSNull()
+                ],
+                "storage": health?.storage.map { [
+                    "name": $0.name, "capacity": $0.capacity,
+                    "smart_status": $0.smart, "source": $0.source
+                ] } ?? [],
+                "limitation": health?.diskInfo ?? "Chưa có dữ liệu sức khỏe phần cứng."
+            ] as [String: Any],
             "tests": results.map { ["name": $0.name, "status": $0.status, "note": $0.note] },
             "conclusion": conclusion,
             "limitations": "Các bài kiểm tra chức năng được xác nhận thủ công; MDM chỉ được kiểm tra từ trạng thái profiles hiện tại, không thay cho xác minh ADE/Activation Lock với người bán; chưa đánh giá SMART hoặc stress test."
@@ -571,7 +585,7 @@ struct MainView: View {
                         .foregroundStyle(.white)
                         .background(anTamOrange, in: RoundedRectangle(cornerRadius: 12))
                 }.buttonStyle(.plain)
-                Button { inspection.exportJSON() } label: {
+                Button { inspection.exportJSON(health: health.snapshot) } label: {
                     Label("Xuất báo cáo", systemImage: "doc.text")
                         .font(.system(size: 15, weight: .bold))
                         .frame(maxWidth: .infinity).padding(13)
@@ -830,6 +844,19 @@ struct MainView: View {
                     Divider()
                 }
                 Button("Xuất báo cáo JSON") { inspection.exportJSON() }
+            }
+            card {
+                HStack {
+                    Text("Pin & Lưu trữ").font(.headline)
+                    Spacer()
+                    Button("Xem dữ liệu") { page = .health }
+                }
+                let b = health.snapshot.battery
+                Text("Pin: " + (b.healthPercent.map { String(format: "%.1f%% (ước tính)", $0) } ?? "Chưa đủ dữ liệu"))
+                Text("Chu kỳ pin: " + (b.cycleCount.map(String.init) ?? "Không khả dụng"))
+                Text("Ổ lưu trữ nhận diện: \(health.snapshot.storage.count)")
+                Text("SMART không khả dụng không được coi là lỗi ổ.")
+                    .font(.caption).foregroundStyle(mutedInk)
             }
             mdmCard
         }
