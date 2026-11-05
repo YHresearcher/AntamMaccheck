@@ -18,6 +18,13 @@ jobs:
         run: swift --version
       - name: Compile app
         run: swift build -c release
+      - name: Render supplied original SVG logo without redrawing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object resources/Greenie-logo.svg)" = "fa5182caff19074776ebf050094eae939364040c"
+          brew install librsvg
+          rsvg-convert --width 512 --height 512 --output resources/AnTamLogo.png resources/Greenie-logo.svg
       - name: Create application bundle
         shell: bash
         run: |
