@@ -246,13 +246,14 @@ struct Result: Identifiable, Codable {
 }
 
 enum Page: String, CaseIterable, Identifiable {
-    case overview = "Tổng quan", hardware = "Thông tin Mac", inspection = "Kiểm tra chi tiết", mdm = "MDM & Quản lý", report = "Báo cáo"
+    case overview = "Tổng quan", hardware = "Thông tin Mac", inspection = "Kiểm tra chi tiết", health = "Sức khỏe phần cứng", mdm = "MDM & Quản lý", report = "Báo cáo"
     var id: String { rawValue }
     var symbol: String {
         switch self {
         case .overview: return "square.grid.2x2"
         case .hardware: return "cpu"
         case .inspection: return "checkmark.shield"
+        case .health: return "battery.100percent"
         case .mdm: return "lock.shield"
         case .report: return "doc.text"
         }
@@ -265,6 +266,7 @@ struct MainView: View {
     @State private var showIssue = false
     @State private var showAbout = false
     @StateObject private var tools = DiagnosticSession()
+    @StateObject private var health = HardwareHealthModel()
 
     var body: some View {
         NavigationSplitView {
@@ -281,6 +283,7 @@ struct MainView: View {
                     navButton(.overview, "house.fill")
                     navButton(.inspection, "laptopcomputer")
                     navButton(.hardware, "cpu")
+                    navButton(.health, "battery.100percent")
                     navButton(.mdm, "lock.shield")
                     navButton(.report, "chart.bar")
                     Divider().padding(.vertical, 10)
@@ -312,6 +315,7 @@ struct MainView: View {
                     switch page {
                     case .overview: overview
                     case .hardware: hardware
+                    case .health: HardwareHealthView(model: health)
                     case .inspection: testWizard
                     case .mdm: mdmDetail
                     case .report: report
@@ -343,6 +347,7 @@ struct MainView: View {
             }
             // Tự đọc cấu hình, không tự chạy stress test hay can thiệp quyền riêng tư.
             if inspection.hardware.isEmpty { inspection.readHardware() }
+            if health.snapshot.readAt == nil { health.refresh() }
         }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
             TextField("Bạn gặp lỗi gì?", text: $inspection.errorNote)
@@ -528,6 +533,32 @@ struct MainView: View {
                 ForEach(["Màn hình", "Loa", "Webcam", "Bàn phím", "Trackpad", "Microphone", "Cổng kết nối", "Ngoại quan"], id: \.self) { name in
                     colorfulTestRow(name)
                 }
+            }
+            card {
+                HStack {
+                    Label("Sức khỏe phần cứng", systemImage: "battery.100percent")
+                        .font(.headline)
+                    Spacer()
+                    Button("Xem chi tiết →") { page = .health }
+                }
+                let b = health.snapshot.battery
+                HStack {
+                    Text("Pin").fontWeight(.medium)
+                    Spacer()
+                    Text(b.healthPercent.map { String(format: "%.1f%% (ước tính)", $0) }
+                         ?? (b.present ? "Chưa đủ dữ liệu" : "Không khả dụng"))
+                        .foregroundStyle(mutedInk)
+                }.font(.caption)
+                HStack {
+                    Text("Ổ lưu trữ").fontWeight(.medium)
+                    Spacer()
+                    Text(health.snapshot.storage.isEmpty
+                         ? "Chưa đọc được thông tin"
+                         : "\(health.snapshot.storage.count) mục nhận diện")
+                        .foregroundStyle(mutedInk)
+                }.font(.caption)
+                Text("Không có dữ liệu không có nghĩa thiết bị hỏng.")
+                    .font(.caption2).foregroundStyle(mutedInk)
             }
             HStack(spacing: 12) {
                 Button {
