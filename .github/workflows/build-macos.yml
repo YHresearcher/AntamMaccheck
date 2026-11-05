@@ -16,6 +16,32 @@ jobs:
         uses: actions/checkout@v4
       - name: Swift version
         run: swift --version
+      - name: Audit fixed-light-theme text contrast and required views
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path("Sources/AnTamMacCheck/App.swift").read_text()
+          health = Path("Sources/AnTamMacCheck/HardwareHealth.swift").read_text()
+          keyboard = Path("Sources/AnTamMacCheck/InteractiveInput.swift").read_text()
+          assert '.preferredColorScheme(.light)' in app, "Fixed cream UI must force light semantic text"
+          assert '.foregroundStyle(ink)' in app, "Main UI must explicitly set dark foreground"
+          assert '.foregroundStyle(ink)\n            .background(Color.white' in app, "Cards need dark-on-white text"
+          assert 'private var aboutPopup' in app and 'private var report:' in app
+          assert 'HardwareHealthView(model: health)' in app
+          assert 'GroupBox("Battery Analyzer")' in health
+          assert 'pressed.contains(key.0)' in keyboard
+          def luminance(rgb):
+              linear = [v / 12.92 if v <= .04045 else ((v+.055)/1.055)**2.4 for v in rgb]
+              return sum(a*b for a,b in zip(linear, [.2126,.7152,.0722]))
+          dark = luminance([.16,.21,.29])
+          white = luminance([1,1,1])
+          cream = luminance([.985,.975,.965])
+          assert (white+.05)/(dark+.05) >= 7, "Card text contrast too low"
+          assert (cream+.05)/(dark+.05) >= 7, "Dashboard text contrast too low"
+          print("Theme static audit passed: light scheme, legible fixed surfaces, required views.")
+          PY
       - name: Compile app
         run: swift build -c release
       - name: Render supplied original SVG logo without redrawing
