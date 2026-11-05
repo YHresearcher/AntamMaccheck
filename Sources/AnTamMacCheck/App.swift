@@ -312,6 +312,7 @@ struct MainView: View {
             }
             .frame(minWidth: 235, maxWidth: 245, maxHeight: .infinity, alignment: .topLeading)
             .padding(.bottom, 15)
+            .foregroundStyle(ink)
             .background(Color(red: 1.0, green: 0.97, blue: 0.935))
         } detail: {
             ScrollView {
@@ -338,6 +339,9 @@ struct MainView: View {
                 }.padding(26).frame(maxWidth: 1160, alignment: .leading)
             }.background(backgroundColor)
         }
+        // Brand uses fixed light surfaces. Never inherit white text from macOS Dark Mode.
+        .preferredColorScheme(.light)
+        .foregroundStyle(ink)
         .tint(anTamOrange)
         .frame(minWidth: 940, minHeight: 680)
         .sheet(isPresented: $showAbout) {
@@ -406,6 +410,8 @@ struct MainView: View {
         .padding(28)
         .frame(width: 510)
         .background(backgroundColor)
+        .foregroundStyle(ink)
+        .preferredColorScheme(.light)
     }
 
     private func assetImage(_ name: String, width: CGFloat, height: CGFloat) -> some View {
@@ -437,7 +443,8 @@ struct MainView: View {
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 14, content: content)
             .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14))
+            .foregroundStyle(ink)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
     }
     private func statusLine(_ label: String, _ detail: String, symbol: String, done: Bool) -> some View {
         HStack(spacing: 12) {
