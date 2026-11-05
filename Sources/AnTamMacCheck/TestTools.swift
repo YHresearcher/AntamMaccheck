@@ -15,6 +15,7 @@ final class DiagnosticSession: ObservableObject {
     @Published var cameraState = "Chưa mở camera"
     @Published var portsText = "Chưa đọc danh sách thiết bị kết nối."
     @Published var recording = false
+    @Published var microphonePlayedBack = false
     @Published var webcamRunning = false
 
     private var recorder: AVAudioRecorder?
@@ -35,15 +36,17 @@ final class DiagnosticSession: ObservableObject {
         speakerPlayer?.stop()
         speakerState = "Chưa phát âm thanh"
         recorderState = "Chưa ghi âm"
+        microphonePlayedBack = false
         cameraState = "Chưa mở camera"
         portsText = "Chưa đọc danh sách thiết bị kết nối."
     }
     func canConfirm(_ name: String) -> Bool {
         switch name {
-        case "Bàn phím": return !capturedKeys.isEmpty
+        case "Bàn phím": return capturedKeys.count >= 10
         case "Trackpad": return dragSamples >= 10
         case "Màn hình": return attempted.contains("Màn hình") && colorIndex == colorCount - 1
-        case "Loa", "Microphone", "Webcam", "Cổng kết nối": return attempted.contains(name)
+        case "Microphone": return attempted.contains(name) && microphonePlayedBack && !recording
+        case "Loa", "Webcam", "Cổng kết nối": return attempted.contains(name)
         default: return true // Ngoại quan cần xác nhận bằng mắt
         }
     }
@@ -80,6 +83,7 @@ final class DiagnosticSession: ObservableObject {
                     rec.prepareToRecord()
                     guard rec.record() else { self.recorderState = "Không khởi động được ghi âm"; return }
                     self.recorder = rec
+                    self.microphonePlayedBack = false
                     self.recording = true
                     self.attempted.insert("Microphone")
                     self.recorderState = "Đang ghi âm — hãy nói một câu rồi bấm Dừng"
@@ -96,7 +100,8 @@ final class DiagnosticSession: ObservableObject {
         guard let url = recorder?.url else { recorderState = "Chưa có bản ghi"; return }
         do {
             player = try AVAudioPlayer(contentsOf: url)
-            player?.play()
+            microphonePlayedBack = player?.play() ?? false
+            if microphonePlayedBack { recorderState = "Đang nghe lại — hãy đánh giá độ rõ tiếng." }
         } catch { recorderState = "Không phát lại được: \(error.localizedDescription)" }
     }
     func beginCamera() {
