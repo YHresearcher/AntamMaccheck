@@ -257,19 +257,15 @@ struct MainView: View {
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(page == .overview ? "Xin chào! 👋" : page.rawValue)
-                                .font(.system(size: 30, weight: .bold, design: .rounded))
-                                .foregroundStyle(ink)
-                            Text("Cùng An Tâm kiểm tra tổng thể chiếc Mac của bạn nhé!")
-                                .font(.subheadline).foregroundStyle(mutedInk)
+                    if page != .overview {
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(page.rawValue).font(.system(size: 29, weight: .bold))
+                                Text("Cùng An Tâm kiểm tra chiếc Mac của bạn nhé!")
+                                    .font(.subheadline).foregroundStyle(mutedInk)
+                            }
+                            Spacer()
                         }
-                        Spacer()
-                        Label(inspection.running ? "Đang kiểm tra" : "Sẵn sàng", systemImage: inspection.running ? "circle.dotted" : "checkmark.circle")
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 12).padding(.vertical, 8)
-                            .background(.white, in: Capsule())
                     }
                     switch page {
                     case .overview: overview
@@ -387,37 +383,29 @@ struct MainView: View {
     }
 
     private var overview: some View {
-        let total = inspection.checks.count
-        let tried = inspection.results.filter { $0.status != "Chưa thử" }.count
-        return GeometryReader { geometry in
-            let isNarrow = geometry.size.width < 850
-            ScrollView {
-                VStack(alignment: .leading, spacing: 15) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Xin chào! 👋").font(.system(size: 29, weight: .bold))
-                            Text("Cùng An Tâm kiểm tra tổng thể chiếc Mac của bạn nhé!")
-                                .font(.subheadline).foregroundStyle(mutedInk)
-                        }
-                        Spacer()
-                        Button("↻  Kiểm tra lại") {
-                            inspection.start()
-                            page = .inspection
-                        }.disabled(inspection.running)
-                    }
-                    if isNarrow {
-                        VStack(spacing: 15) {
-                            overviewLeft
-                            overviewRight
-                        }
-                    } else {
-                        HStack(alignment: .top, spacing: 15) {
-                            overviewLeft.frame(maxWidth: .infinity)
-                            overviewRight.frame(maxWidth: .infinity)
-                        }
-                    }
-                }.padding(20)
-            }.background(backgroundColor)
+        VStack(alignment: .leading, spacing: 15) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Xin chào! 👋").font(.system(size: 29, weight: .bold))
+                    Text("Cùng An Tâm kiểm tra tổng thể chiếc Mac của bạn nhé!")
+                        .font(.subheadline).foregroundStyle(mutedInk)
+                }
+                Spacer()
+                Button("↻  Kiểm tra lại") {
+                    inspection.start()
+                    page = .inspection
+                }.disabled(inspection.running)
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 15) {
+                    overviewLeft.frame(minWidth: 350, maxWidth: .infinity)
+                    overviewRight.frame(minWidth: 350, maxWidth: .infinity)
+                }
+                VStack(spacing: 15) {
+                    overviewLeft
+                    overviewRight
+                }
+            }
         }
     }
 
