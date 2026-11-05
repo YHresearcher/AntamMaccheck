@@ -54,6 +54,15 @@ sw_vers -productVersion
 
 Bản build được ký ad-hoc để đảm bảo gói `.app` không bị thay đổi sau khi đóng gói, nhưng **chưa notarize**. Vì vậy Gatekeeper vẫn có thể chặn file vừa tải về. Không nên tắt Gatekeeper trên toàn hệ thống hoặc chạy phần mềm bằng quyền root để vượt qua cảnh báo. Khi gặp lỗi, cần phân biệt rõ cảnh báo Gatekeeper, kiến trúc CPU không phù hợp, macOS quá cũ (yêu cầu macOS 13+), và app crash.
 
+## Trải nghiệm mở ứng dụng & thương hiệu (bản cập nhật)
+
+- Ứng dụng **tự đọc cấu hình** khi mở. Nút Làm mới vẫn giữ ở trang Thông tin Mac để chủ động đọc lại.
+- Cửa sổ mặc định **1480 × 960**, đồng thời nới rộng khi macOS khôi phục kích thước cũ, có giới hạn theo màn hình hiện tại để không tràn màn hình.
+- Bỏ menu **Hướng dẫn**.
+- **Giới thiệu** mở cửa sổ popup riêng, có logo Vi tính An Tâm nguyên bản, hai địa chỉ chi nhánh, website và bảo hành 6 tháng.
+- Slogan thống nhất: **“Bán bằng tâm để bạn an tâm”**.
+- Thẻ thiết bị dùng **hình MacBook riêng**, không dùng ảnh laptop Windows.
+
 ## Tính năng kiểm tra trong bản thử mới
 
 Giao diện `Kiểm tra chi tiết` có công cụ thực tế theo từng bước:
