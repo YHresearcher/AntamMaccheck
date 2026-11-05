@@ -16,12 +16,13 @@ struct VirtualKeyboardView: View {
         VStack(spacing: 4) {
             ForEach(layout.indices, id: \.self) { row in
                 HStack(spacing: 4) {
-                    ForEach(layout[row], id: \.0) { code, label in
-                        Text(label)
+                    ForEach(layout[row].indices, id: \.self) { column in
+                        let key = layout[row][column]
+                        Text(key.1)
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
-                            .foregroundStyle(pressed.contains(code) ? Color.white : Color.primary)
+                            .foregroundStyle(pressed.contains(key.0) ? Color.white : Color.primary)
                             .frame(maxWidth: .infinity, minHeight: 29)
-                            .background(pressed.contains(code) ? Color.green : Color.gray.opacity(0.12),
+                            .background(pressed.contains(key.0) ? Color.green : Color.gray.opacity(0.12),
                                         in: RoundedRectangle(cornerRadius: 5))
                             .overlay(RoundedRectangle(cornerRadius: 5)
                                 .stroke(Color.gray.opacity(0.22), lineWidth: 0.5))
