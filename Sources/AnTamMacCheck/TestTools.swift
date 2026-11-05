@@ -158,6 +158,7 @@ struct KeyCapture: NSViewRepresentable {
 final class KeyCaptureNSView: NSView {
     var onKey: ((UInt16) -> Void)?
     override var acceptsFirstResponder: Bool { true }
+    override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
     override func keyDown(with event: NSEvent) { onKey?(event.keyCode) }
 }
 
@@ -185,7 +186,7 @@ struct DiagnosticToolView: View {
         VStack(alignment: .leading, spacing: 12) {
             switch name {
             case "Màn hình":
-                Text("Hiển thị lần lượt 5 màu toàn màn hình để kiểm tra điểm chết, hở sáng và ám màu.")
+                Text("Hiển thị lần lượt 5 vùng màu lớn để tìm điểm chết và ám màu. Muốn kiểm tra toàn bộ bề mặt, hãy phóng to cửa sổ.")
                 Button("Mở bài test 5 màu") {
                     tools.mark("Màn hình")
                     tools.colorIndex = 0
