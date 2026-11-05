@@ -6,6 +6,9 @@
     <key>CFBundleDisplayName</key><string>An Tâm Mac check</string>
     <key>CFBundleIdentifier</key><string>com.vitinhantam.maccheck</string>
     <key>CFBundleExecutable</key><string>AnTamMacCheck</string>
+    <key>CFBundleIconFile</key><string>AnTamMacCheck.icns</string>
+    <key>NSCameraUsageDescription</key><string>An Tâm Mac check cần quyền camera khi bạn tự bắt đầu bài kiểm tra webcam. Không tải hình ảnh lên máy chủ.</string>
+    <key>NSMicrophoneUsageDescription</key><string>An Tâm Mac check cần quyền microphone để bạn ghi âm thử và nghe lại trên thiết bị. Bản ghi lưu tạm trong máy.</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>CFBundleVersion</key><string>1</string>
