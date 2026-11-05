@@ -218,42 +218,42 @@ struct MainView: View {
     @StateObject private var inspection = Inspection()
     @State private var page: Page = .overview
     @State private var showIssue = false
+    @State private var showHelp = false
 
     var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
-                    if let path = Bundle.main.path(forResource: "AnTamLogo", ofType: "png"),
-                       let logo = NSImage(contentsOfFile: path) {
-                        Image(nsImage: logo).resizable().scaledToFit().frame(width: 44, height: 44)
-                    } else {
-                        Image(systemName: "checkmark.shield.fill").font(.largeTitle).foregroundStyle(anTamOrange)
+                    assetImage("MascotChecklist", width: 90, height: 88)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("An Tâm").font(.system(size: 20, weight: .bold))
+                        Text("Mac check").font(.system(size: 19, weight: .bold))
                     }
-                    VStack(alignment: .leading) {
-                        Text("An Tâm").font(.headline)
-                        Text("Mac check").font(.caption).foregroundStyle(.secondary)
-                    }
-                }.padding(.horizontal, 16).padding(.top, 18)
-                List(Page.allCases, selection: $page) { value in
-                    Label(value.rawValue, systemImage: value.symbol)
-                        .font(.system(size: 13, weight: page == value ? .semibold : .medium))
-                        .padding(.vertical, 10).tag(value)
-                }.listStyle(.sidebar)
-                Text("Cùng An Tâm kiểm tra chiếc Mac của bạn nhé! 🧡")
-                    .font(.caption).foregroundStyle(mutedInk)
-                    .padding(.horizontal, 16)
+                }
+                .padding(.horizontal, 12).padding(.top, 16)
+                VStack(spacing: 7) {
+                    navButton(.overview, "house.fill")
+                    navButton(.inspection, "laptopcomputer")
+                    navButton(.hardware, "cpu")
+                    navButton(.mdm, "lock.shield")
+                    navButton(.report, "chart.bar")
+                    Divider().padding(.vertical, 10)
+                    Button { showHelp = true } label: {
+                        Label("Hướng dẫn", systemImage: "questionmark.circle")
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                    }.buttonStyle(.plain)
+                    Button { page = .report } label: {
+                        Label("Giới thiệu", systemImage: "info.circle")
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                    }.buttonStyle(.plain)
+                }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
-                Link(Shop.name, destination: Shop.website).font(.caption)
-                    .padding(.horizontal, 16)
-                Text("CN1: \(Shop.branch1)")
-                    .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 16)
-                Text("CN2: \(Shop.branch2)")
-                    .font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 16)
-                Text(Shop.warranty).font(.caption2).foregroundStyle(anTamOrange)
-                    .padding(.horizontal, 16)
-                Link("Tham quan shop", destination: Shop.website)
-                    .font(.caption.weight(.semibold)).padding(.horizontal, 16)
-            }.padding(.bottom, 16)
+                Text("An Tâm Mac check • macOS")
+                    .font(.caption).foregroundStyle(mutedInk).padding(.horizontal, 18)
+            }
+            .frame(minWidth: 235, maxWidth: 245, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.bottom, 15)
+            .background(Color(red: 1.0, green: 0.97, blue: 0.935))
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -291,12 +291,43 @@ struct MainView: View {
         }
         .tint(anTamOrange)
         .frame(minWidth: 940, minHeight: 680)
+        .alert("Hướng dẫn", isPresented: $showHelp) {
+            Button("Đã hiểu") { }
+        } message: {
+            Text("Chọn Kiểm tra chi tiết để làm các bước kiểm tra thủ công. Xem MDM & Quản lý để kiểm tra trạng thái enrollment; chưa phát hiện không có nghĩa bảo đảm sạch MDM. Xuất JSON ở trang Báo cáo.")
+        }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
             TextField("Bạn gặp lỗi gì?", text: $inspection.errorNote)
             Button("Lưu lỗi & tiếp tục") { inspection.record("Có lỗi") }
                 .disabled(inspection.errorNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Quay lại", role: .cancel) {}
         } message: { Text("Cứ mô tả thật dễ hiểu nhé, An Tâm sẽ lưu lại vào báo cáo.") }
+    }
+
+    private func assetImage(_ name: String, width: CGFloat, height: CGFloat) -> some View {
+        Group {
+            if let path = Bundle.main.path(forResource: name, ofType: "png"),
+               let img = NSImage(contentsOfFile: path) {
+                Image(nsImage: img).resizable().scaledToFit()
+            } else {
+                Image(systemName: name == "LaptopPreview" ? "laptopcomputer" : "checkmark.shield.fill")
+                    .resizable().scaledToFit().foregroundStyle(anTamOrange)
+            }
+        }.frame(width: width, height: height)
+    }
+
+    private func navButton(_ destination: Page, _ icon: String) -> some View {
+        Button { page = destination } label: {
+            HStack(spacing: 13) {
+                Image(systemName: icon).frame(width: 23)
+                Text(destination.rawValue).font(.system(size: 14, weight: page == destination ? .bold : .medium))
+                Spacer()
+            }
+            .foregroundStyle(page == destination ? Color.white : ink)
+            .padding(.horizontal, 13).padding(.vertical, 12)
+            .background(page == destination ? anTamOrange : Color.white.opacity(0.56),
+                        in: RoundedRectangle(cornerRadius: 12))
+        }.buttonStyle(.plain)
     }
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
