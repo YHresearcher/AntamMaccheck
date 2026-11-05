@@ -140,6 +140,32 @@ struct Result: Identifiable, Codable {
                 values[name] = value.isEmpty ? "Không khả dụng" : value
             } catch { values[name] = "Không khả dụng" }
         }
+        // Trên Apple Silicon, machdep.cpu.brand_string thường không tồn tại.
+        // system_profiler cung cấp chip_type thực tế (Apple M1/M2/M3/...).
+        if values["Chip / CPU"] == "Không khả dụng" {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
+            p.arguments = ["SPHardwareDataType", "-json"]
+            let out = Pipe()
+            p.standardOutput = out
+            p.standardError = Pipe()
+            do {
+                try p.run()
+                let data = out.fileHandleForReading.readDataToEndOfFile()
+                p.waitUntilExit()
+                if p.terminationStatus == 0,
+                   let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let entries = root["SPHardwareDataType"] as? [[String: Any]],
+                   let device = entries.first {
+                    if let chip = device["chip_type"] as? String, !chip.isEmpty {
+                        values["Chip / CPU"] = chip
+                    }
+                    if let model = device["machine_name"] as? String, !model.isEmpty {
+                        values["Model"] = model
+                    }
+                }
+            } catch { /* Giữ trạng thái Không khả dụng thay vì bịa CPU. */ }
+        }
         hardware = values
         info = "Đã đọc cấu hình cơ bản rồi nè! Đây chưa phải kết quả kiểm tra sức khỏe nha."
     }
