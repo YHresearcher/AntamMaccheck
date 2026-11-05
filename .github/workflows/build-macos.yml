@@ -49,6 +49,36 @@ jobs:
           test -s "$SRC/mascot-thinking-2026.png"
           cp "$SRC/mascot-checklist-2026.png" resources/MascotChecklist.png
           cp "$SRC/mascot-thinking-2026.png" resources/MascotThinking.png
+      - name: Generate original stereo speaker-test WAV
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import math, struct, wave
+          from pathlib import Path
+          rate = 44100
+          melody = [261.63, 329.63, 392.0, 523.25, 392.0, 329.63, 293.66, 261.63]
+          out = Path("resources/StereoSpeakerTest.wav")
+          with wave.open(str(out), "wb") as w:
+              w.setnchannels(2)
+              w.setsampwidth(2)
+              w.setframerate(rate)
+              # First four seconds left only, last four seconds right only.
+              block = bytearray()
+              for n in range(rate * 8):
+                  sec = n / rate
+                  note = int(sec / 0.5)
+                  frequency = melody[min(note % 8, 7)]
+                  local = (n % (rate // 2)) / rate
+                  fade = min(1.0, local * 18, (0.5 - local) * 18)
+                  sample = int(10000 * max(0.0, fade) * (
+                      math.sin(2 * math.pi * frequency * sec)
+                      + 0.25 * math.sin(2 * math.pi * frequency * 2 * sec)))
+                  left, right = (sample, 0) if sec < 4 else (0, sample)
+                  block += struct.pack("<hh", left, right)
+              w.writeframes(block)
+          print("Original stereo test WAV:", out.stat().st_size, "bytes")
+          PY
       - name: Create application bundle
         shell: bash
         run: |
@@ -58,6 +88,7 @@ jobs:
           cp ".build/release/AnTamMacCheck" "$APP/Contents/MacOS/AnTamMacCheck"
           cp "resources/Info.plist" "$APP/Contents/Info.plist"
           cp "resources/AnTamMacCheck.icns" "$APP/Contents/Resources/AnTamMacCheck.icns"
+          cp "resources/StereoSpeakerTest.wav" "$APP/Contents/Resources/StereoSpeakerTest.wav"
           if [ -f "resources/AnTamLogo.png" ]; then
             cp "resources/AnTamLogo.png" "$APP/Contents/Resources/AnTamLogo.png"
           fi
@@ -75,6 +106,8 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist" | grep -Fx AnTamMacCheck
           test -x "$APP/Contents/MacOS/AnTamMacCheck"
+          test -s "$APP/Contents/Resources/StereoSpeakerTest.wav"
+          test -s "$APP/Contents/Resources/AnTamMacCheck.icns"
           file "$APP/Contents/MacOS/AnTamMacCheck"
           ditto -c -k --keepParent "$APP" "AnTam-Mac-check-macOS.zip"
           # Verify extracted contents too (not just the pre-ZIP bundle).
