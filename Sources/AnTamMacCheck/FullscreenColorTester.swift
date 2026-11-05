@@ -91,12 +91,15 @@ final class ColorTestWindow: NSWindow {
     weak var statusLabel: NSTextField?
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
-    override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 53: onClose?()     // escape
-        case 124: onNext?()    // arrow right
-        case 123: onPrevious?() // arrow left
-        default: super.keyDown(with: event)
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown {
+            switch event.keyCode {
+            case 53: onClose?(); return      // Escape
+            case 124: onNext?(); return     // Right arrow
+            case 123: onPrevious?(); return // Left arrow
+            default: break
+            }
         }
+        super.sendEvent(event)
     }
 }
