@@ -39,6 +39,8 @@ jobs:
           done
           iconutil -c icns resources/AnTamMacCheck.iconset -o resources/AnTamMacCheck.icns
           test -s resources/AnTamMacCheck.icns
+          iconutil -c iconset resources/AnTamMacCheck.icns -o /tmp/antam-icon-qa.iconset
+          test -s /tmp/antam-icon-qa.iconset/icon_512x512.png
       - name: Bring approved mascot and laptop assets from PCcheck
         shell: bash
         run: |
@@ -78,6 +80,18 @@ jobs:
                   block += struct.pack("<hh", left, right)
               w.writeframes(block)
           print("Original stereo test WAV:", out.stat().st_size, "bytes")
+          # Regression check: both channels must carry audio, but at separate times.
+          with wave.open(str(out), "rb") as w:
+              assert w.getnchannels() == 2 and w.getframerate() == rate
+              assert w.getnframes() == rate * 8
+              w.setpos(rate)  # left interval
+              l, r = struct.unpack("<hh", w.readframes(1))
+              assert l != 0 and r == 0, (l, r)
+              w.setpos(rate * 5)  # right interval
+              l, r = struct.unpack("<hh", w.readframes(1))
+              assert l == 0 and r != 0, (l, r)
+          print("Stereo L/R isolation verified.")
+
           PY
       - name: Create application bundle
         shell: bash
