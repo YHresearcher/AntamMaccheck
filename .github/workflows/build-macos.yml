@@ -84,10 +84,10 @@ jobs:
           with wave.open(str(out), "rb") as w:
               assert w.getnchannels() == 2 and w.getframerate() == rate
               assert w.getnframes() == rate * 8
-              w.setpos(rate)  # left interval
+              w.setpos(rate + 1234)  # left interval (avoid zero-crossing)
               l, r = struct.unpack("<hh", w.readframes(1))
               assert l != 0 and r == 0, (l, r)
-              w.setpos(rate * 5)  # right interval
+              w.setpos(rate * 5 + 1234)  # right interval
               l, r = struct.unpack("<hh", w.readframes(1))
               assert l == 0 and r != 0, (l, r)
           print("Stereo L/R isolation verified.")
