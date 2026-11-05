@@ -202,6 +202,11 @@ struct Result: Identifiable, Codable {
             info = "Đã hoàn tất các bài test. Xem kết luận và các cảnh báo trong Báo cáo."
         }
     }
+    func resume() {
+        guard !running && step < checks.count else { return }
+        running = true
+        info = "Tiếp tục phiên kiểm tra từ bước \(step + 1)/\(checks.count)."
+    }
     func stop() {
         running = false
         info = "Đã dừng kiểm tra. Những mục chưa thử sẽ không được tính là đạt nha."
@@ -774,7 +779,7 @@ struct MainView: View {
                 } else {
                     Text("Còn bài chưa kiểm tra.").foregroundStyle(mutedInk)
                     Button("Tiếp tục kiểm tra") {
-                        if !inspection.running { inspection.start() }
+                        inspection.resume()
                         page = .inspection
                     }
                 }
