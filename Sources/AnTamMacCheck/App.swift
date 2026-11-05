@@ -44,17 +44,31 @@ struct Result: Identifiable, Codable {
     @Published var info = "Bán bằng tâm để bạn an tâm"
     let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan"]
 
+    var verdictTitle: String {
+        if mdm.status == "Phát hiện quản lý" { return "KHÔNG KHUYẾN NGHỊ MUA" }
+        if results.contains(where: { $0.status == "Có lỗi" }) { return "PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ" }
+        if results.count < checks.count || results.contains(where: { $0.status == "Chưa thử" }) {
+            return "CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC"
+        }
+        return "ĐÃ HOÀN TẤT KIỂM TRA CHỨC NĂNG — CẦN XÁC MINH THÊM"
+    }
     var conclusion: String {
         if mdm.status == "Phát hiện quản lý" {
-            return "Máy đang có dấu hiệu quản lý từ xa. An Tâm khuyên bạn chưa mua cho đến khi người bán chứng minh quyền sở hữu và gỡ quản lý hợp lệ nhé!"
+            return "Đã phát hiện dấu hiệu quản lý MDM/ADE. Không khuyến nghị giao dịch cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ."
         }
-        if results.contains(where: { $0.status == "Có lỗi" }) {
-            return "Máy có một vài điểm cần để mắt tới! Xem lỗi đã ghi nhận trước khi xuống tiền nhé."
+        let errors = results.filter { $0.status == "Có lỗi" }
+        if !errors.isEmpty {
+            let detail = errors.map { "\($0.name): \($0.note)" }.joined(separator: "; ")
+            return "Có \(errors.count) hạng mục lỗi: \(detail). Cần kiểm tra hoặc sửa chữa trước khi cân nhắc mua."
         }
-        if results.count < checks.count || results.contains(where: { $0.status == "Chưa thử" }) {
-            return "Chiếc Mac vẫn còn vài bí mật! Mình chưa đủ dữ liệu để đưa ra kết luận đâu nhé."
+        let unknown = checks.filter { name in
+            guard let result = results.first(where: { $0.name == name }) else { return true }
+            return result.status == "Chưa thử"
         }
-        return "Các mục bạn đã xác nhận đều ổn! Tuy nhiên, còn cần xác minh MDM/Activation Lock và kiểm tra SMART, stress test trước khi quyết định mua nhé."
+        if !unknown.isEmpty {
+            return "Chưa đủ dữ liệu để kết luận. Còn \(unknown.count) hạng mục chưa xác nhận: \(unknown.joined(separator: ", "))."
+        }
+        return "8/8 bài kiểm tra chức năng được kỹ thuật viên xác nhận ổn. Chưa thể kết luận máy an toàn toàn diện: cần kiểm tra pin, SSD/SMART, tải CPU/GPU, Activation Lock và MDM bằng quy trình xác minh hợp lệ."
     }
     func checkMDM() {
         guard !checkingMDM else { return }
@@ -185,7 +199,7 @@ struct Result: Identifiable, Codable {
         step += 1
         if step == checks.count {
             running = false
-            info = "Xong rồi! Bạn xem kết luận ở trang Báo cáo nhé."
+            info = "Đã hoàn tất các bài test. Xem kết luận và các cảnh báo trong Báo cáo."
         }
     }
     func stop() {
@@ -298,13 +312,6 @@ struct MainView: View {
                     case .report: report
                     }
                     Spacer(minLength: 10)
-                    Divider()
-                    HStack {
-                        Link(Shop.name, destination: Shop.website)
-                        Text("• \(Shop.warranty)").foregroundStyle(.secondary)
-                        Spacer()
-                        Text("An Tâm Mac check").foregroundStyle(.secondary)
-                    }.font(.caption)
                 }.padding(26).frame(maxWidth: 1160, alignment: .leading)
             }.background(backgroundColor)
         }
@@ -334,7 +341,12 @@ struct MainView: View {
         }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
             TextField("Bạn gặp lỗi gì?", text: $inspection.errorNote)
-            Button("Lưu lỗi & tiếp tục") { inspection.record("Có lỗi") }
+            Button("Lưu lỗi & tiếp tục") {
+                inspection.record("Có lỗi")
+                tools.stopCamera()
+                tools.stopRecording()
+                if !inspection.running { page = .report }
+            }
                 .disabled(inspection.errorNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Quay lại", role: .cancel) {}
         } message: { Text("Cứ mô tả thật dễ hiểu nhé, An Tâm sẽ lưu lại vào báo cáo.") }
@@ -550,18 +562,6 @@ struct MainView: View {
                     .foregroundStyle(anTamOrange)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12).background(warningBackground, in: RoundedRectangle(cornerRadius: 12))
-                HStack(alignment: .center, spacing: 10) {
-                    assetImage("MascotThinking", width: 112, height: 112)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("An Tâm nhắn bạn").font(.subheadline.bold())
-                        Text(inspection.mdm.status == "Phát hiện quản lý"
-                             ? "Có dấu hiệu quản lý. Hãy xác minh và xử lý hợp lệ trước khi mua."
-                             : "Chưa thể kết luận máy sạch MDM chỉ từ trạng thái hiện tại.")
-                            .font(.caption).foregroundStyle(mutedInk)
-                    }
-                }
-                .padding(10)
-                .background(warningBackground.opacity(0.62), in: RoundedRectangle(cornerRadius: 12))
                 Text("✦  Bạn nên kiểm tra thêm để yên tâm:")
                     .font(.system(size: 13, weight: .bold))
                 Text("1  Kiểm tra hồ sơ quản lý thiết bị")
@@ -577,7 +577,6 @@ struct MainView: View {
                     Button("Xem chi tiết →") { page = .mdm }
                 }
             }
-            shopCard
         }
     }
 
@@ -710,12 +709,14 @@ struct MainView: View {
                 HStack {
                     Button("Ổn rồi!") {
                         inspection.record("Ổn")
+                        if !inspection.running { page = .report }
                         if current == "Webcam" { tools.stopCamera() }
                         if current == "Microphone" { tools.stopRecording() }
                     }.disabled(!tools.canConfirm(current))
                     Button("Có lỗi") { showIssue = true }
                     Button("Chưa thử") {
                         inspection.record("Chưa thử")
+                        if !inspection.running { page = .report }
                         tools.stopRecording()
                         tools.stopCamera()
                     }
@@ -726,11 +727,14 @@ struct MainView: View {
                     }
                 }
             } else {
-                Text("Hiện không có bài test đang chạy. Bạn có thể bắt đầu từ trang Tổng quan.")
+                Text(inspection.results.count == inspection.checks.count ? "Phiên kiểm tra đã hoàn tất. Xem kết luận trong Báo cáo." : "Phiên kiểm tra đang dừng. Mở Báo cáo để xem kết quả đã ghi nhận.")
                     .foregroundStyle(.secondary)
-                Button("Bắt đầu") {
-                    tools.reset()
-                    inspection.start()
+                Button("Xem kết quả & kết luận") { page = .report }
+                if inspection.results.isEmpty {
+                    Button("Bắt đầu kiểm tra mới") {
+                        tools.reset()
+                        inspection.start()
+                    }
                 }
             }
         }
@@ -738,33 +742,63 @@ struct MainView: View {
     private var report: some View {
         VStack(spacing: 16) {
             card {
-                Text("Đánh giá mua máy").font(.headline)
-                Text(inspection.conclusion)
-                Text("Chưa đánh giá SSD, pin, Activation Lock; MDM chỉ phản ánh kết quả lệnh macOS tại thời điểm kiểm tra.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            mdmCard
-            shopCard
-            card {
-                Text("Kết quả đã ghi nhận").font(.headline)
-                if inspection.results.isEmpty {
-                    Text("Chưa có kết quả nào.").foregroundStyle(.secondary)
+                Label("Kết luận kiểm tra", systemImage: "checkmark.shield.fill").font(.title3.bold())
+                Text(inspection.verdictTitle)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(inspection.results.contains(where: { $0.status == "Có lỗi" })
+                        || inspection.mdm.status == "Phát hiện quản lý" ? Color.red : anTamOrange)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(warningBackground, in: RoundedRectangle(cornerRadius: 12))
+                HStack(alignment: .top, spacing: 14) {
+                    assetImage("MascotThinking", width: 115, height: 115)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("An Tâm nhắn bạn").font(.headline)
+                        Text(inspection.conclusion).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                ForEach(inspection.results) { result in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(result.name).fontWeight(.medium)
-                            Spacer()
-                            Text(result.status).foregroundStyle(result.status == "Có lỗi" ? Color.red : Color.secondary)
-                        }
-                        if !result.note.isEmpty { Text(result.note).font(.caption).foregroundStyle(.secondary) }
+                Text("Kết luận chỉ dựa trên kiểm tra chức năng do người dùng xác nhận và thông tin MDM hiện tại; không thay thế nghiệm thu phần cứng chuyên sâu.")
+                    .font(.caption).foregroundStyle(mutedInk)
+            }
+            card {
+                HStack {
+                    Text("Tiến độ phiên kiểm tra").font(.headline)
+                    Spacer()
+                    Text("\(inspection.results.count)/\(inspection.checks.count) hạng mục").font(.caption.bold())
+                }
+                ProgressView(value: Double(inspection.results.count), total: Double(inspection.checks.count))
+                if !inspection.running && inspection.results.count == inspection.checks.count {
+                    Text("Đã hoàn tất phiên kiểm tra.").foregroundStyle(.green)
+                } else if inspection.running {
+                    Button("Tiếp tục kiểm tra") { page = .inspection }
+                } else {
+                    Text("Còn bài chưa kiểm tra.").foregroundStyle(mutedInk)
+                    Button("Tiếp tục kiểm tra") {
+                        if !inspection.running { inspection.start() }
+                        page = .inspection
+                    }
+                }
+            }
+            card {
+                Text("Kết quả chi tiết").font(.headline)
+                ForEach(inspection.checks, id: \.self) { name in
+                    let result = inspection.results.first(where: { $0.name == name })
+                    HStack {
+                        Text(name).fontWeight(.medium).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(result?.status ?? "Chưa thử")
+                            .foregroundStyle(result?.status == "Có lỗi" ? Color.red : Color.secondary)
+                    }
+                    if let note = result?.note, !note.isEmpty {
+                        Text(note).font(.caption).foregroundStyle(mutedInk)
                     }
                     Divider()
                 }
                 Button("Xuất báo cáo JSON") { inspection.exportJSON() }
             }
+            mdmCard
         }
     }
+
 }
 
 @main
