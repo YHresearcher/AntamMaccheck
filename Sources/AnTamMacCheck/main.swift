@@ -41,7 +41,7 @@ struct Result: Identifiable, Codable {
     @Published var running = false
     @Published var step = 0
     @Published var errorNote = ""
-    @Published var info = "Chào bạn! Khi sẵn sàng, hãy bấm Bắt đầu kiểm tra nhé."
+    @Published var info = "Bán bằng tâm để bạn an tâm"
     let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan"]
 
     var conclusion: String {
@@ -218,7 +218,7 @@ struct MainView: View {
     @StateObject private var inspection = Inspection()
     @State private var page: Page = .overview
     @State private var showIssue = false
-    @State private var showHelp = false
+    @State private var showAbout = false
     @StateObject private var tools = DiagnosticSession()
 
     var body: some View {
@@ -239,17 +239,13 @@ struct MainView: View {
                     navButton(.mdm, "lock.shield")
                     navButton(.report, "chart.bar")
                     Divider().padding(.vertical, 10)
-                    Button { showHelp = true } label: {
-                        Label("Hướng dẫn", systemImage: "questionmark.circle")
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                    }.buttonStyle(.plain)
-                    Button { page = .report } label: {
+                    Button { showAbout = true } label: {
                         Label("Giới thiệu", systemImage: "info.circle")
                             .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                     }.buttonStyle(.plain)
                 }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
-                Text("An Tâm Mac check • macOS")
+                Text("Bán bằng tâm để bạn an tâm")
                     .font(.caption).foregroundStyle(mutedInk).padding(.horizontal, 18)
             }
             .frame(minWidth: 235, maxWidth: 245, maxHeight: .infinity, alignment: .topLeading)
@@ -262,7 +258,7 @@ struct MainView: View {
                         HStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(page.rawValue).font(.system(size: 29, weight: .bold))
-                                Text("Cùng An Tâm kiểm tra chiếc Mac của bạn nhé!")
+                                Text("Bán bằng tâm để bạn an tâm")
                                     .font(.subheadline).foregroundStyle(mutedInk)
                             }
                             Spacer()
@@ -288,10 +284,12 @@ struct MainView: View {
         }
         .tint(anTamOrange)
         .frame(minWidth: 940, minHeight: 680)
-        .alert("Hướng dẫn", isPresented: $showHelp) {
-            Button("Đã hiểu") { }
-        } message: {
-            Text("Chọn Kiểm tra chi tiết để làm các bước kiểm tra thủ công. Xem MDM & Quản lý để kiểm tra trạng thái enrollment; chưa phát hiện không có nghĩa bảo đảm sạch MDM. Xuất JSON ở trang Báo cáo.")
+        .sheet(isPresented: $showAbout) {
+            aboutPopup
+        }
+        .onAppear {
+            // Đọc cấu hình ngay khi app mở; không cần nhấn nút thủ công.
+            if inspection.hardware.isEmpty { inspection.readHardware() }
         }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
             TextField("Bạn gặp lỗi gì?", text: $inspection.errorNote)
@@ -301,13 +299,45 @@ struct MainView: View {
         } message: { Text("Cứ mô tả thật dễ hiểu nhé, An Tâm sẽ lưu lại vào báo cáo.") }
     }
 
+    private var aboutPopup: some View {
+        VStack(spacing: 17) {
+            assetImage("AnTamLogo", width: 100, height: 100)
+            Text("VI TÍNH AN TÂM")
+                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .foregroundStyle(ink)
+            Text("Bán bằng tâm để bạn an tâm")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(anTamOrange)
+                .multilineTextAlignment(.center)
+            Divider()
+            VStack(alignment: .leading, spacing: 13) {
+                Label("Chi nhánh 1: " + Shop.branch1, systemImage: "mappin.circle")
+                Label("Chi nhánh 2: " + Shop.branch2, systemImage: "mappin.circle")
+                Label(Shop.warranty, systemImage: "checkmark.shield")
+                Link(destination: Shop.website) {
+                    Label("vitinhantam.com", systemImage: "globe")
+                }
+            }
+            .font(.system(size: 13))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("An Tâm Mac check — công cụ hỗ trợ kiểm tra Mac đã qua sử dụng")
+                .font(.caption).foregroundStyle(mutedInk)
+            Button("Đóng") { showAbout = false }
+                .keyboardShortcut(.cancelAction)
+                .padding(.top, 6)
+        }
+        .padding(28)
+        .frame(width: 510)
+        .background(backgroundColor)
+    }
+
     private func assetImage(_ name: String, width: CGFloat, height: CGFloat) -> some View {
         Group {
             if let path = Bundle.main.path(forResource: name, ofType: "png"),
                let img = NSImage(contentsOfFile: path) {
                 Image(nsImage: img).resizable().scaledToFit()
             } else {
-                Image(systemName: name == "LaptopPreview" ? "laptopcomputer" : "checkmark.shield.fill")
+                Image(systemName: name == "MacBookPreview" ? "laptopcomputer" : "checkmark.shield.fill")
                     .resizable().scaledToFit().foregroundStyle(anTamOrange)
             }
         }.frame(width: width, height: height)
@@ -388,7 +418,7 @@ struct MainView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Xin chào! 👋").font(.system(size: 29, weight: .bold))
-                    Text("Cùng An Tâm kiểm tra tổng thể chiếc Mac của bạn nhé!")
+                    Text("Bán bằng tâm để bạn an tâm")
                         .font(.subheadline).foregroundStyle(mutedInk)
                 }
                 Spacer()
@@ -415,7 +445,7 @@ struct MainView: View {
         VStack(spacing: 15) {
             card {
                 HStack(alignment: .center, spacing: 14) {
-                    assetImage("LaptopPreview", width: 170, height: 146)
+                    assetImage("MacBookPreview", width: 170, height: 146)
                     VStack(alignment: .leading, spacing: 6) {
                         Text(inspection.hardware["Model"] ?? "Mac đang kiểm tra")
                             .font(.system(size: 19, weight: .bold)).lineLimit(2)
@@ -580,6 +610,7 @@ struct MainView: View {
                 Spacer()
                 Image(systemName: "checkmark.shield.fill").foregroundStyle(anTamOrange)
             }
+            Text("Bán bằng tâm để bạn an tâm").font(.caption.weight(.semibold)).foregroundStyle(anTamOrange)
             Text(Shop.warranty).font(.caption.bold()).foregroundStyle(anTamOrange)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(anTamOrange.opacity(0.1), in: Capsule())
@@ -699,5 +730,6 @@ struct MainView: View {
 struct AnTamMacCheckApp: App {
     var body: some Scene {
         WindowGroup("An Tâm Mac check") { MainView() }
+            .defaultSize(width: 1480, height: 960)
     }
 }
