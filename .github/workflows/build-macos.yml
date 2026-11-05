@@ -25,6 +25,18 @@ jobs:
           test "$(git hash-object resources/Greenie-logo.svg)" = "fa5182caff19074776ebf050094eae939364040c"
           brew install librsvg
           rsvg-convert --width 512 --height 512 --output resources/AnTamLogo.png resources/Greenie-logo.svg
+      - name: Bring approved mascot and laptop assets from PCcheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/YHresearcher/PCcheck.git /tmp/antam-pccheck-assets
+          SRC="/tmp/antam-pccheck-assets/验机软件/Assets"
+          test -s "$SRC/mascot-checklist-2026.png"
+          test -s "$SRC/mascot-thinking-2026.png"
+          test -s "$SRC/laptop-preview-2026.png"
+          cp "$SRC/mascot-checklist-2026.png" resources/MascotChecklist.png
+          cp "$SRC/mascot-thinking-2026.png" resources/MascotThinking.png
+          cp "$SRC/laptop-preview-2026.png" resources/LaptopPreview.png
       - name: Create application bundle
         shell: bash
         run: |
@@ -36,6 +48,9 @@ jobs:
           if [ -f "resources/AnTamLogo.png" ]; then
             cp "resources/AnTamLogo.png" "$APP/Contents/Resources/AnTamLogo.png"
           fi
+          for asset in MascotChecklist MascotThinking LaptopPreview; do
+            cp "resources/$asset.png" "$APP/Contents/Resources/$asset.png"
+          done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
           plutil -lint "$APP/Contents/Info.plist"
           ditto -c -k --keepParent "$APP" "AnTam-Mac-check-macOS.zip"
