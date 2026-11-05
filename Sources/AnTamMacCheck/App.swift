@@ -288,7 +288,22 @@ struct MainView: View {
             aboutPopup
         }
         .onAppear {
-            // Đọc cấu hình ngay khi app mở; không cần nhấn nút thủ công.
+            // Mở rộng ngay cả khi macOS khôi phục kích thước cửa sổ cũ.
+            DispatchQueue.main.async {
+                let window = NSApp.keyWindow
+                    ?? NSApp.windows.first(where: { $0.title.contains("An Tâm Mac check") })
+                if let window, !window.styleMask.contains(.fullScreen),
+                   let screen = window.screen ?? NSScreen.main {
+                    let visible = screen.visibleFrame
+                    let width = min(1480.0, max(940.0, visible.width - 24))
+                    let height = min(960.0, max(680.0, visible.height - 64))
+                    if window.contentLayoutRect.width < width - 24 {
+                        window.setContentSize(NSSize(width: width, height: height))
+                        window.center()
+                    }
+                }
+            }
+            // Tự đọc cấu hình, không tự chạy stress test hay can thiệp quyền riêng tư.
             if inspection.hardware.isEmpty { inspection.readHardware() }
         }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
