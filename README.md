@@ -54,6 +54,22 @@ sw_vers -productVersion
 
 Bản build được ký ad-hoc để đảm bảo gói `.app` không bị thay đổi sau khi đóng gói, nhưng **chưa notarize**. Vì vậy Gatekeeper vẫn có thể chặn file vừa tải về. Không nên tắt Gatekeeper trên toàn hệ thống hoặc chạy phần mềm bằng quyền root để vượt qua cảnh báo. Khi gặp lỗi, cần phân biệt rõ cảnh báo Gatekeeper, kiến trúc CPU không phù hợp, macOS quá cũ (yêu cầu macOS 13+), và app crash.
 
+## Tính năng kiểm tra trong bản thử mới
+
+Giao diện `Kiểm tra chi tiết` có công cụ thực tế theo từng bước:
+- **Màn hình:** vùng đổi 5 màu để quan sát điểm chết và ám màu; không tự nhận biết điểm chết, chưa thay thế test toàn màn hình.
+- **Bàn phím:** vùng nhận mã phím thực; cần người dùng thử toàn bộ phím, ít nhất một phím mới cho phép xác nhận.
+- **Trackpad:** vùng kéo tương tác; không phân biệt được thao tác bằng chuột rời và trackpad. Cần tự thử click/cuộn/đa điểm.
+- **Loa:** phát lời nói qua đầu ra âm thanh hiện tại; người dùng nghe và xác nhận.
+- **Microphone:** xin quyền hệ thống, ghi âm tạm và phát lại; không tự đánh giá chất lượng.
+- **Webcam:** xin quyền hệ thống và phát hình xem trước; người dùng quan sát.
+- **Cổng kết nối:** đọc danh sách thiết bị USB/Thunderbolt bằng `system_profiler`; **không** kết luận mọi cổng vật lý tốt chỉ từ danh sách.
+- **Ngoại quan:** kiểm tra và xác nhận bằng mắt.
+
+Nút **Ổn rồi** là xác nhận của kỹ thuật viên sau thao tác, không phải máy tự động chẩn đoán. Khi không thử có nút **Chưa thử**, khi phát hiện bất thường dùng **Có lỗi** để nhập mô tả. Chưa có kiểm tra tự động SSD SMART, pin, CPU/GPU stress, hay kết luận Activation Lock.
+
+App có biểu tượng `AnTamMacCheck.icns` lấy từ logo SVG gốc. Build GitHub Actions có ký ad-hoc và xác minh ZIP nhưng **chưa notarized**.
+
 ## Kế hoạch tiếp theo
 Kết nối adapters cho IOKit/System Profiler, kiểm tra pin/SSD và bổ sung hướng dẫn xác minh bảo mật khi kích hoạt lại với người bán; phát triển bài kiểm tra thực tế có Stop All; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
 
