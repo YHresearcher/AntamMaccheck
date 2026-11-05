@@ -32,6 +32,28 @@ Logo PNG gốc chưa được đưa vào repo. App đã có mã hiển thị `An
 
 Có thể chạy locally trên macOS 13+ có Swift toolchain: `swift run AnTamMacCheck`.
 
+## Không mở được ứng dụng trên macOS
+
+Gói tải từ GitHub Actions chứa ZIP lồng nhau: giải nén artifact `AnTam-Mac-check-macOS.zip` do GitHub tạo, rồi giải nén tiếp `AnTam-Mac-check-macOS.zip` nằm bên trong để nhận `An Tam Mac check.app`.
+
+1. Kéo `An Tam Mac check.app` vào **Applications** trên Mac.
+2. Nhấp chuột phải → **Open (Mở)**. Nếu bị chặn, vào **System Settings → Privacy & Security → Open Anyway** sau khi chắc chắn tải đúng nguồn.
+3. Nếu app thoát ngay hoặc không có cửa sổ, mở **Terminal**, chạy:
+
+```bash
+"/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+```
+
+Sao chép **thông báo lỗi cuối cùng** gửi cho nhóm phát triển. Có thể xem thêm chữ ký bằng:
+
+```bash
+codesign --verify --deep --strict --verbose=2 "/Applications/An Tam Mac check.app"
+file "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+sw_vers -productVersion
+```
+
+Bản build được ký ad-hoc để đảm bảo gói `.app` không bị thay đổi sau khi đóng gói, nhưng **chưa notarize**. Vì vậy Gatekeeper vẫn có thể chặn file vừa tải về. Không nên tắt Gatekeeper trên toàn hệ thống hoặc chạy phần mềm bằng quyền root để vượt qua cảnh báo. Khi gặp lỗi, cần phân biệt rõ cảnh báo Gatekeeper, kiến trúc CPU không phù hợp, macOS quá cũ (yêu cầu macOS 13+), và app crash.
+
 ## Kế hoạch tiếp theo
 Kết nối adapters cho IOKit/System Profiler, kiểm tra pin/SSD và bổ sung hướng dẫn xác minh bảo mật khi kích hoạt lại với người bán; phát triển bài kiểm tra thực tế có Stop All; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
 
