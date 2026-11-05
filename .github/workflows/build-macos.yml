@@ -53,8 +53,23 @@ jobs:
           done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
           plutil -lint "$APP/Contents/Info.plist"
+          # SwiftPM's raw executable is wrapped into a .app above. Sign the
+          # *completed bundle* after copying all resources, never before.
+          # An ad-hoc signature checks bundle integrity but is NOT Apple
+          # Developer ID notarization; quarantine on downloads still needs
+          # explicit user approval on their Mac.
+          codesign --force --deep --sign - --timestamp=none "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist" | grep -Fx AnTamMacCheck
+          test -x "$APP/Contents/MacOS/AnTamMacCheck"
+          file "$APP/Contents/MacOS/AnTamMacCheck"
           ditto -c -k --keepParent "$APP" "AnTam-Mac-check-macOS.zip"
-      - name: Upload unsigned development build
+          # Verify extracted contents too (not just the pre-ZIP bundle).
+          mkdir -p build/verify-zip
+          ditto -x -k "AnTam-Mac-check-macOS.zip" build/verify-zip
+          codesign --verify --deep --strict --verbose=2 "build/verify-zip/An Tam Mac check.app"
+          test -x "build/verify-zip/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+      - name: Upload ad-hoc signed development build
         uses: actions/upload-artifact@v4
         with:
           name: AnTam-Mac-check-macOS
