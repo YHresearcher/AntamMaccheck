@@ -91,8 +91,8 @@ enum NativeHealthProbe {
                 return
             }
             guard let node = value as? [String: Any] else { return }
-            let name = field(node, ["_name", "device_model", "model", "medium_type"])
-            let capacity = field(node, ["size", "capacity", "size_in_bytes", "physical_drive"])
+            let name = field(node, ["device_model", "model", "_name", "medium_type"])
+            let capacity = field(node, ["size", "capacity", "spnvme_capacity"]) ?? (node["size_in_bytes"] as? NSNumber).map { ByteCountFormatter.string(fromByteCount: $0.int64Value, countStyle: .decimal) }
             let smart = field(node, ["smart_status", "smart", "SMART", "s_m_a_r_t_status"])
             let hardwareLike = node.keys.contains("smart_status")
                 || node.keys.contains("device_model")
