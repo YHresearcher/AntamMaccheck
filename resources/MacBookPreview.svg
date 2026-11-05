@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660">
+<defs>
+  <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e7e7ec"/><stop offset=".53" stop-color="#b7bac4"/><stop offset="1" stop-color="#f3f3f6"/></linearGradient>
+  <linearGradient id="base" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f7f7fa"/><stop offset=".48" stop-color="#a5a8b3"/><stop offset="1" stop-color="#787a85"/></linearGradient>
+  <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe0c6"/><stop offset=".3" stop-color="#fa8b61"/><stop offset=".68" stop-color="#db5aa2"/><stop offset="1" stop-color="#5449a6"/></linearGradient>
+  <linearGradient id="wave" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5c8fda"/><stop offset=".45" stop-color="#8058c8"/><stop offset="1" stop-color="#f5b4af"/></linearGradient>
+  <filter id="shadow" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="13"/></filter>
+</defs>
+<ellipse cx="510" cy="584" rx="435" ry="28" fill="#4d4352" opacity=".16" filter="url(#shadow)"/>
+<rect x="113" y="48" width="774" height="492" rx="27" fill="#797a84"/>
+<rect x="119" y="52" width="762" height="480" rx="23" fill="url(#body)"/>
+<rect x="130" y="64" width="740" height="456" rx="13" fill="#111116"/>
+<rect x="144" y="77" width="712" height="427" rx="4" fill="url(#wall)"/>
+<path d="M144 419 Q360 310 495 425 Q685 555 856 340 L856 504 L144 504Z" fill="url(#wave)" opacity=".94"/>
+<path d="M144 500 C310 389 387 422 495 465 C606 510 738 358 856 381 L856 504 L144 504Z" fill="#f6c2c3" opacity=".62"/>
+<rect x="469" y="65" width="62" height="14" rx="7" fill="#101014"/>
+<circle cx="500" cy="72" r="2.5" fill="#414652"/>
+<rect x="119" y="533" width="762" height="6" rx="3" fill="#6e7078"/>
+<path d="M118 539 H882 L957 564 Q965 568 953 574 Q941 584 904 584 H96 Q58 584 47 574 Q38 568 46 564Z" fill="url(#base)" stroke="#b4b5bd" stroke-width="2"/>
+<path d="M49 563 H953 Q959 563 956 567 H46 Q43 563 49 563Z" fill="#e7e8eb"/>
+<path d="M437 539 H563 L555 551 Q552 554 542 554 H458 Q448 554 445 551Z" fill="#b3b5bd"/>
+<path d="M79 577 Q500 596 921 577" fill="none" stroke="#767780" stroke-width="3" opacity=".32"/>
+</svg>
