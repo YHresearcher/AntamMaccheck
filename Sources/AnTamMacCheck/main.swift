@@ -219,6 +219,7 @@ struct MainView: View {
     @State private var page: Page = .overview
     @State private var showIssue = false
     @State private var showHelp = false
+    @StateObject private var tools = DiagnosticSession()
 
     var body: some View {
         NavigationSplitView {
@@ -392,6 +393,7 @@ struct MainView: View {
                 }
                 Spacer()
                 Button("↻  Kiểm tra lại") {
+                    tools.reset()
                     inspection.start()
                     page = .inspection
                 }.disabled(inspection.running)
@@ -441,7 +443,7 @@ struct MainView: View {
             }
             HStack(spacing: 12) {
                 Button {
-                    if !inspection.running { inspection.start() }
+                    if !inspection.running { tools.reset(); inspection.start() }
                     page = .inspection
                 } label: {
                     Label("Kiểm tra chi tiết", systemImage: "play.fill")
@@ -624,19 +626,40 @@ struct MainView: View {
             Text("Kiểm tra từng bước").font(.title3.bold())
             ProgressView(value: Double(inspection.results.count), total: Double(inspection.checks.count))
             if inspection.running && inspection.step < inspection.checks.count {
+                let current = inspection.checks[inspection.step]
                 Text("Bước \(inspection.step + 1)/\(inspection.checks.count)")
                     .font(.caption).foregroundStyle(.secondary)
-                Text(inspection.checks[inspection.step]).font(.title.bold()).foregroundStyle(anTamOrange)
-                Text("Hãy kiểm tra chức năng thực tế rồi cho An Tâm biết kết quả nha.")
+                Text(current).font(.title.bold()).foregroundStyle(anTamOrange)
+                DiagnosticToolView(name: current, tools: tools)
+                Text(tools.canConfirm(current)
+                     ? "Hãy tự quan sát kết quả rồi xác nhận."
+                     : "Hãy thực hiện bài test trước khi xác nhận Đạt. Có thể chọn Có lỗi hoặc Chưa thử bất cứ lúc nào.")
+                    .font(.caption).foregroundStyle(mutedInk)
                 HStack {
-                    Button("Ổn rồi!") { inspection.record("Ổn") }
+                    Button("Ổn rồi!") {
+                        inspection.record("Ổn")
+                        if current == "Webcam" { tools.stopCamera() }
+                        if current == "Microphone" { tools.stopRecording() }
+                    }.disabled(!tools.canConfirm(current))
                     Button("Có lỗi") { showIssue = true }
-                    Button("Chưa thử") { inspection.record("Chưa thử") }
-                    Button("Dừng toàn bộ", role: .destructive) { inspection.stop() }
+                    Button("Chưa thử") {
+                        inspection.record("Chưa thử")
+                        tools.stopRecording()
+                        tools.stopCamera()
+                    }
+                    Button("Dừng toàn bộ", role: .destructive) {
+                        tools.stopRecording()
+                        tools.stopCamera()
+                        inspection.stop()
+                    }
                 }
             } else {
                 Text("Hiện không có bài test đang chạy. Bạn có thể bắt đầu từ trang Tổng quan.")
                     .foregroundStyle(.secondary)
+                Button("Bắt đầu") {
+                    tools.reset()
+                    inspection.start()
+                }
             }
         }
     }
