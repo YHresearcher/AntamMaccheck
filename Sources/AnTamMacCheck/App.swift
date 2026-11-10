@@ -113,12 +113,22 @@ struct Result: Identifiable, Codable {
             } else {
                 status = "Chưa đủ dữ liệu"
             }
+            // Cả hai mục đều Không: chỉ xác nhận khoảng 80% máy không có MDM,
+            // không phải 100%. Xóa toàn bộ máy và kích hoạt lại chỉ là lựa
+            // chọn thêm để chắc chắn hơn, không bắt buộc.
+            let warning: String
+            if enrollment == "Không" && automated == "Không" {
+                warning = "MDM enrollment và Automated Enrollment đều là Không — xác nhận khoảng 80% máy hiện không bị quản lý MDM. Để cẩn thận hơn, có thể xóa toàn bộ máy và kích hoạt lại để chắc chắn — đây chỉ là lựa chọn thêm, không bắt buộc."
+            } else {
+                warning = MDMCheck().warning
+            }
             let result = MDMCheck(
                 status: status,
                 enrollment: enrollment,
                 automatedEnrollment: automated,
                 checkedAt: ISO8601DateFormatter().string(from: Date()),
-                details: raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                details: raw.trimmingCharacters(in: .whitespacesAndNewlines),
+                warning: warning
             )
             DispatchQueue.main.async {
                 self.mdm = result
@@ -613,7 +623,7 @@ struct MainView: View {
                 Label("MDM & Quản lý thiết bị", systemImage: "lock.shield.fill")
                     .font(.system(size: 20, weight: .bold))
                 Text(inspection.mdm.status == "Chưa phát hiện quản lý hiện tại"
-                     ? "Chưa phát hiện MDM — cần xác minh thêm"
+                     ? "Chưa phát hiện MDM — khoảng 80% máy không có MDM"
                      : inspection.mdm.status)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(anTamOrange)
@@ -627,7 +637,7 @@ struct MainView: View {
                     .font(.caption).foregroundStyle(mutedInk)
                 Text("2  Kiểm tra sau khi xóa máy và kích hoạt lại")
                     .font(.system(size: 12, weight: .semibold))
-                Text("Chỉ khi chủ máy đồng ý và đã sao lưu. Kết nối Internet, kiểm tra Remote Management.")
+                Text("Lựa chọn thêm để chắc chắn hơn, không bắt buộc. Chỉ khi chủ máy đồng ý và đã sao lưu. Kết nối Internet, kiểm tra Remote Management.")
                     .font(.caption).foregroundStyle(mutedInk)
                 HStack {
                     Button("Kiểm tra MDM") { inspection.checkMDM() }.disabled(inspection.checkingMDM)
@@ -662,10 +672,15 @@ struct MainView: View {
                 Divider()
                 Text("2. Kiểm tra sau khi xóa và kích hoạt lại máy")
                     .font(.subheadline.bold())
-                Text("Chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
+                Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
                     .font(.caption).foregroundStyle(mutedInk)
-                Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
-                    .font(.caption.bold()).foregroundStyle(anTamOrange)
+                if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
+                    Text("Cả hai mục đều là Không — xác nhận khoảng 80% máy không có MDM, không phải 100%. Muốn chắc chắn hơn thì xóa toàn bộ máy và kích hoạt lại, nhưng không bắt buộc.")
+                        .font(.caption.bold()).foregroundStyle(anTamOrange)
+                } else {
+                    Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
+                        .font(.caption.bold()).foregroundStyle(anTamOrange)
+                }
             }
         }
     }
