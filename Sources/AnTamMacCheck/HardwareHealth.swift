@@ -32,6 +32,9 @@ struct HardwareHealthSnapshot {
     var diskInfo = ""
     var status = "Chưa đọc dữ liệu"
     var readAt: Date?
+    /// "Đã bật" / "Đã tắt" / "Chưa xác định". Chỉ đọc được trên máy
+    /// Apple Silicon / chip T2; máy Intel không T2 không có trường này.
+    var activationLock = "Chưa xác định"
 }
 
 enum NativeHealthProbe {
@@ -117,12 +120,31 @@ enum NativeHealthProbe {
         }
         return (records, "Dữ liệu hệ thống chỉ xác nhận ổ được nhận diện; SMART không khả dụng không phải lỗi ổ.")
     }
+    /// Activation Lock đọc được ngay trên máy, không cần mật khẩu hay xóa máy:
+    /// system_profiler SPHardwareDataType -json trả activation_lock_status =
+    /// activation_lock_enabled / activation_lock_disabled (chỉ có trên máy
+    /// Apple Silicon / T2). Apple đã bỏ trang tra cứu công khai theo số serial
+    /// từ 2017 nên không tra được từ xa; chắc chắn nhất vẫn là xóa máy và
+    /// kích hoạt lại xem có hỏi tài khoản Apple cũ không.
+    private static func activationLock() -> String {
+        guard let output = run("/usr/sbin/system_profiler", ["SPHardwareDataType", "-json"]),
+              let data = output.data(using: .utf8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entries = root["SPHardwareDataType"] as? [[String: Any]],
+              let device = entries.first,
+              let status = device["activation_lock_status"] as? String else { return "Chưa xác định" }
+        switch status {
+        case "activation_lock_enabled": return "Đã bật"
+        case "activation_lock_disabled": return "Đã tắt"
+        default: return "Chưa xác định"
+        }
+    }
     static func collect() -> HardwareHealthSnapshot {
         let battery = battery()
         let (disks, note) = storage()
         return HardwareHealthSnapshot(battery: battery, storage: disks,
                                       diskInfo: note, status: "Đã thu thập dữ liệu khả dụng",
-                                      readAt: Date())
+                                      readAt: Date(), activationLock: activationLock())
     }
 }
 
@@ -185,6 +207,13 @@ struct HardwareHealthView: View {
                         Divider()
                     }
                     Text(model.snapshot.diskInfo)
+                        .font(.caption).foregroundStyle(.secondary)
+                }.padding(10)
+            }
+            GroupBox("Activation Lock") {
+                VStack(alignment: .leading, spacing: 8) {
+                    value("Trạng thái", model.snapshot.activationLock)
+                    Text("Đọc từ system_profiler SPHardwareDataType; chỉ có trên máy Apple Silicon / chip T2. Đã bật = máy còn khóa tài khoản Apple của chủ cũ, không nên mua khi chưa gỡ. Chắc chắn nhất vẫn là xóa máy và kích hoạt lại.")
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(10)
             }

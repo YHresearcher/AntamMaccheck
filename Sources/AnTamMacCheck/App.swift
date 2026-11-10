@@ -44,31 +44,149 @@ struct Result: Identifiable, Codable {
     @Published var info = "Bán bằng tâm để bạn an tâm"
     let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan"]
 
-    var verdictTitle: String {
-        if mdm.status == "Phát hiện quản lý" { return "KHÔNG KHUYẾN NGHỊ MUA" }
-        if results.contains(where: { $0.status == "Có lỗi" }) { return "PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ" }
-        if results.count < checks.count || results.contains(where: { $0.status == "Chưa thử" }) {
-            return "CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC"
+    /// Mức kết luận tổng hợp từ TẤT CẢ các tab (chức năng + pin + ổ +
+    /// MDM + Activation Lock), theo thứ tự ưu tiên như PCcheck
+    /// (chặn > lỗi > chưa đủ dữ liệu > lưu ý > đạt). Trước đây kết luận chỉ
+    /// nhìn 8 bài chức năng và MDM, nên pin/SSD đã đọc rồi vẫn không đổi
+    /// được kết luận — đó là lý do trang Báo cáo cứ dừng ở "cần xác minh thêm".
+    enum OverallTier { case blocked, error, incomplete, caution, good }
+
+    /// Phát hiện từ pin / ổ / Activation Lock. Ngưỡng theo Apple: pin dưới
+    /// 80% là đã suy giảm, nên tính chi phí thay; trên 1000 chu kỳ là vượt
+    /// mức thiết kế của MacBook. SMART báo "Failing" là lỗi ổ thật; SMART
+    /// không đọc được thì chỉ là chưa xác nhận, không tính là lỗi ổ.
+    func healthFindings(for health: HardwareHealthSnapshot?) -> (errors: [String], cautions: [String]) {
+        guard let health else { return ([], []) }
+        var errors: [String] = []
+        var cautions: [String] = []
+        let b = health.battery
+        if b.present {
+            if let pct = b.healthPercent {
+                if pct < 80 {
+                    errors.append(String(format: "Pin còn %.1f%% (dưới 80%%) — đã suy giảm, nên tính chi phí thay pin", pct))
+                } else if pct < 90 {
+                    cautions.append(String(format: "Pin còn %.1f%% — đã hao, thời gian dùng pin sẽ ngắn hơn", pct))
+                }
+            } else {
+                cautions.append("Chưa đọc được sức khỏe pin")
+            }
+            if let cycles = b.cycleCount, cycles > 1000 {
+                cautions.append("Pin đã qua \(cycles) chu kỳ sạc (vượt mốc 1000 của Apple)")
+            }
+        } else {
+            cautions.append("Chưa đọc được pin (máy bàn không có pin, hoặc chưa đọc được dữ liệu)")
         }
-        return "ĐÃ HOÀN TẤT KIỂM TRA CHỨC NĂNG — CẦN XÁC MINH THÊM"
+        if health.storage.isEmpty {
+            cautions.append("Chưa nhận diện được ổ lưu trữ")
+        }
+        for disk in health.storage {
+            let smart = disk.smart.lowercased()
+            if smart.contains("fail") {
+                errors.append("Ổ \(disk.name): SMART báo lỗi (\(disk.smart))")
+            } else if smart == "không khả dụng" {
+                cautions.append("Ổ \(disk.name): chưa đọc được SMART — chưa xác nhận được sức khỏe ổ")
+            }
+        }
+        if health.activationLock == "Chưa xác định" {
+            cautions.append("Chưa xác định được Activation Lock (máy không có trường này, hoặc chưa đọc được)")
+        }
+        return (errors, cautions)
     }
-    var conclusion: String {
-        if mdm.status == "Phát hiện quản lý" {
-            return "Đã phát hiện dấu hiệu quản lý MDM/ADE. Không khuyến nghị giao dịch cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ."
+
+    func overallTier(for health: HardwareHealthSnapshot? = nil) -> OverallTier {
+        if mdm.status == "Phát hiện quản lý" || health?.activationLock == "Đã bật" { return .blocked }
+        let findings = healthFindings(for: health)
+        if results.contains(where: { $0.status == "Có lỗi" }) || !findings.errors.isEmpty { return .error }
+        if results.count < checks.count || results.contains(where: { $0.status == "Chưa thử" }) { return .incomplete }
+        if !findings.cautions.isEmpty { return .caution }
+        return .good
+    }
+
+    func verdictTitle(for health: HardwareHealthSnapshot? = nil) -> String {
+        switch overallTier(for: health) {
+        case .blocked: return "KHÔNG KHUYẾN NGHỊ MUA"
+        case .error: return "PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ"
+        case .incomplete: return "CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC"
+        case .caution: return "ĐÃ HOÀN TẤT KIỂM TRA — CÓ ĐIỂM CẦN LƯU Ý"
+        case .good: return "MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA"
         }
-        let errors = results.filter { $0.status == "Có lỗi" }
-        if !errors.isEmpty {
-            let detail = errors.map { "\($0.name): \($0.note)" }.joined(separator: "; ")
-            return "Có \(errors.count) hạng mục lỗi: \(detail). Cần kiểm tra hoặc sửa chữa trước khi cân nhắc mua."
-        }
-        let unknown = checks.filter { name in
-            guard let result = results.first(where: { $0.name == name }) else { return true }
-            return result.status == "Chưa thử"
-        }
-        if !unknown.isEmpty {
+    }
+
+    func conclusion(for health: HardwareHealthSnapshot? = nil) -> String {
+        let tier = overallTier(for: health)
+        let findings = healthFindings(for: health)
+        switch tier {
+        case .blocked:
+            if mdm.status == "Phát hiện quản lý" {
+                return "Đã phát hiện dấu hiệu quản lý MDM/ADE. Không khuyến nghị giao dịch cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ."
+            }
+            return "Activation Lock đang bật — máy còn khóa tài khoản Apple của chủ cũ. Không nên mua cho tới khi chủ cũ đăng xuất iCloud / gỡ khóa, hoặc xóa máy và kích hoạt lại mà không còn hỏi tài khoản cũ."
+        case .error:
+            var parts: [String] = []
+            let functional = results.filter { $0.status == "Có lỗi" }
+            if !functional.isEmpty {
+                parts.append("Chức năng lỗi (\(functional.count)): " + functional.map {
+                    $0.note.isEmpty ? $0.name : "\($0.name): \($0.note)"
+                }.joined(separator: "; "))
+            }
+            parts.append(contentsOf: findings.errors)
+            return parts.joined(separator: ". ") + ". Cần kiểm tra hoặc sửa chữa trước khi cân nhắc mua."
+        case .incomplete:
+            let unknown = checks.filter { name in
+                guard let result = results.first(where: { $0.name == name }) else { return true }
+                return result.status == "Chưa thử"
+            }
             return "Chưa đủ dữ liệu để kết luận. Còn \(unknown.count) hạng mục chưa xác nhận: \(unknown.joined(separator: ", "))."
+        case .caution:
+            var text = "8/8 bài kiểm tra chức năng đều ổn. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
+            if mdm.enrollment == "Không" && mdm.automatedEnrollment == "Không" {
+                text += " MDM cả hai mục đều Không — khoảng 80% máy không có MDM."
+            }
+            if health?.activationLock == "Đã tắt" { text += " Activation Lock đã tắt." }
+            return text
+        case .good:
+            var text = "8/8 bài kiểm tra chức năng đều ổn"
+            if let pct = health?.battery.healthPercent {
+                text += String(format: "; pin còn %.1f%%", pct)
+            }
+            if let verified = health?.storage.filter({ $0.smart.lowercased() == "verified" }).map({ $0.name }),
+               !verified.isEmpty {
+                text += "; ổ \(verified.joined(separator: ", ")) SMART Verified"
+            }
+            text += "; MDM cả hai mục đều Không (khoảng 80% máy không có MDM); Activation Lock đã tắt."
+            text += " Chưa test tải CPU/GPU, và chưa xóa máy kiểm tra lại — hai bước này vẫn nên làm khi cần chắc chắn hơn, nhưng không bắt buộc."
+            return text
         }
-        return "8/8 bài kiểm tra chức năng được kỹ thuật viên xác nhận ổn. Chưa thể kết luận máy an toàn toàn diện: cần kiểm tra pin, SSD/SMART, tải CPU/GPU, Activation Lock và MDM bằng quy trình xác minh hợp lệ."
+    }
+
+    /// Lời nhắn "An Tâm nhắn bạn" ở cuối Báo cáo, theo đúng cách PCcheck làm:
+    /// 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (không random lại
+    /// mỗi lần vẽ); chưa đủ dữ liệu thì không có lời nhắn. Các cặp thơ lấy
+    /// nguyên văn từ nhóm thơ của PCcheck (Phrasings.json / anTamGroups).
+    func reassuranceNote(for health: HardwareHealthSnapshot? = nil) -> String? {
+        let tier = overallTier(for: health)
+        let findings = healthFindings(for: health)
+        switch tier {
+        case .blocked:
+            return "Máy qua tay mấy người rồi,\nHỏi cho rõ gốc, kẻo ngồi âu lo."
+        case .error:
+            if findings.errors.contains(where: { $0.hasPrefix("Ổ ") || $0.hasPrefix("Pin còn") }) {
+                return "Kiểm cho thật kỹ hôm nay,\nMai sau khỏi tiếc, đắng cay một mình."
+            }
+            return "Mua về chạy tốt mới vui,\nChứ còn sửa mãi, niềm vui còn gì."
+        case .incomplete:
+            return nil
+        case .caution:
+            return "Pin chai ổ yếu đừng quên,\nTrừ hao chi phí, nói lên giá mình."
+        case .good:
+            return "Máy ngon chẳng ngại đem soi,\nCàng xem càng thích, càng coi càng mừng."
+        }
+    }
+
+    /// Mascot cuối Báo cáo đổi theo kết quả như PCcheck: máy ổn thì mascot
+    /// checklist, còn lại mascot suy nghĩ (chỉ có 2 mascot này trong bản Mac).
+    func reassuranceMascot(for health: HardwareHealthSnapshot? = nil) -> String {
+        overallTier(for: health) == .good ? "MascotChecklist" : "MascotThinking"
     }
     func checkMDM() {
         guard !checkingMDM else { return }
@@ -255,11 +373,18 @@ struct Result: Identifiable, Codable {
                     "name": $0.name, "capacity": $0.capacity,
                     "smart_status": $0.smart, "source": $0.source
                 ] } ?? [],
+                "activation_lock": health?.activationLock as Any? ?? NSNull(),
                 "limitation": health?.diskInfo ?? "Chưa có dữ liệu sức khỏe phần cứng."
             ] as [String: Any],
             "tests": results.map { ["name": $0.name, "status": $0.status, "note": $0.note] },
-            "conclusion": conclusion,
-            "limitations": "Các bài kiểm tra chức năng được xác nhận thủ công; MDM chỉ được kiểm tra từ trạng thái profiles hiện tại, không thay cho xác minh ADE/Activation Lock với người bán; chưa đánh giá SMART hoặc stress test."
+            "verdict": verdictTitle(for: health),
+            "conclusion": conclusion(for: health),
+            "health_assessment": [
+                "errors": healthFindings(for: health).errors,
+                "cautions": healthFindings(for: health).cautions
+            ] as [String: Any],
+            "an_tam_nhan_ban": reassuranceNote(for: health) as Any? ?? NSNull(),
+            "limitations": "Kết luận tổng hợp tự động từ kiểm tra chức năng, pin, ổ lưu trữ/SMART, MDM và Activation Lock; MDM chỉ đọc trạng thái profiles hiện tại; chưa test tải CPU/GPU; xóa máy và kích hoạt lại là bước chắc chắn thêm, không bắt buộc."
         ]
         do {
             let bytes = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
@@ -812,24 +937,19 @@ struct MainView: View {
         }
     }
     private var report: some View {
-        VStack(spacing: 16) {
+        let tier = inspection.overallTier(for: health.snapshot)
+        return VStack(spacing: 16) {
             card {
                 Label("Kết luận kiểm tra", systemImage: "checkmark.shield.fill").font(.title3.bold())
-                Text(inspection.verdictTitle)
+                Text(inspection.verdictTitle(for: health.snapshot))
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(inspection.results.contains(where: { $0.status == "Có lỗi" })
-                        || inspection.mdm.status == "Phát hiện quản lý" ? Color.red : anTamOrange)
+                    .foregroundStyle(tier == .good ? Color.green
+                        : tier == .blocked || tier == .error ? Color.red : anTamOrange)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(warningBackground, in: RoundedRectangle(cornerRadius: 12))
-                HStack(alignment: .top, spacing: 14) {
-                    assetImage("MascotThinking", width: 115, height: 115)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("An Tâm nhắn bạn").font(.headline)
-                        Text(inspection.conclusion).fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                Text("Kết luận chỉ dựa trên kiểm tra chức năng do người dùng xác nhận và thông tin MDM hiện tại; không thay thế nghiệm thu phần cứng chuyên sâu.")
+                Text(inspection.conclusion(for: health.snapshot)).fixedSize(horizontal: false, vertical: true)
+                Text("Kết luận tổng hợp tự động từ 8 bài kiểm tra chức năng, pin, ổ lưu trữ/SMART, MDM và Activation Lock; chưa gồm tải CPU/GPU.")
                     .font(.caption).foregroundStyle(mutedInk)
             }
             card {
@@ -865,7 +985,7 @@ struct MainView: View {
                     }
                     Divider()
                 }
-                Button("Xuất báo cáo JSON") { inspection.exportJSON() }
+                Button("Xuất báo cáo JSON") { inspection.exportJSON(health: health.snapshot) }
             }
             card {
                 HStack {
@@ -877,10 +997,24 @@ struct MainView: View {
                 Text("Pin: " + (b.healthPercent.map { String(format: "%.1f%% (ước tính)", $0) } ?? "Chưa đủ dữ liệu"))
                 Text("Chu kỳ pin: " + (b.cycleCount.map(String.init) ?? "Không khả dụng"))
                 Text("Ổ lưu trữ nhận diện: \(health.snapshot.storage.count)")
+                Text("Activation Lock: \(health.snapshot.activationLock)")
                 Text("SMART không khả dụng không được coi là lỗi ổ.")
                     .font(.caption).foregroundStyle(mutedInk)
             }
             mdmCard
+            card {
+                Label("An Tâm nhắn bạn", systemImage: "heart.fill").font(.title3.bold())
+                HStack(alignment: .top, spacing: 14) {
+                    assetImage(inspection.reassuranceMascot(for: health.snapshot), width: 115, height: 115)
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let note = inspection.reassuranceNote(for: health.snapshot) {
+                            Text(note).fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text("Chưa đủ dữ liệu nên chưa có lời nhắn — làm nốt các mục còn thiếu rồi quay lại đây nhé.")
+                        }
+                    }
+                }
+            }
         }
     }
 

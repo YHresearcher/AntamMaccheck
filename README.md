@@ -15,7 +15,7 @@
 - Kiểm tra MDM/ADE hiện tại qua `/usr/bin/profiles status -type enrollment` (bấm thủ công, chạy nền, không tự quét khi mở app)
 
 ## Giới hạn hiện tại
-Đây là **bản khởi tạo chạy thử giao diện**, chưa phải phần mềm kiểm tra tự động hoàn chỉnh. Wizard hiện ghi nhận kết quả do người dùng xác nhận; chưa tự thực hiện test loa/micro, màn hình, bàn phím, SMART hay CPU/GPU stress. Kiểm tra MDM chỉ đọc trạng thái hiện tại do macOS trả về, không xác minh được quyền sở hữu, liên kết Apple Business/School Manager trong mọi tình huống hay Activation Lock. Không được hiểu kết luận từ wizard là chứng nhận Mac an toàn để mua.
+Đây là **bản khởi tạo chạy thử giao diện**, chưa phải phần mềm kiểm tra tự động hoàn chỉnh. Wizard hiện ghi nhận kết quả do người dùng xác nhận; chưa tự thực hiện test loa/micro, màn hình, bàn phím hay CPU/GPU stress. Pin, ổ lưu trữ/SMART và Activation Lock được đọc tự động từ hệ thống và tổng hợp vào kết luận (xem "Kết luận tổng hợp" bên dưới). Kiểm tra MDM chỉ đọc trạng thái hiện tại do macOS trả về, không xác minh được quyền sở hữu hay liên kết Apple Business/School Manager trong mọi tình huống. Không được hiểu kết luận từ wizard là chứng nhận Mac an toàn để mua.
 
 Logo PNG gốc chưa được đưa vào repo. App đã có mã hiển thị `AnTamLogo.png` nếu resource tồn tại và dùng biểu tượng mặc định nếu chưa có.
 
@@ -67,7 +67,7 @@ Bản build được ký ad-hoc để đảm bảo gói `.app` không bị thay 
 
 Giao diện `Kiểm tra chi tiết` có công cụ thực tế theo từng bước:
 - **Màn hình:** vùng đổi 5 màu để quan sát điểm chết và ám màu; không tự nhận biết điểm chết, chưa thay thế test toàn màn hình.
-- **Bàn phím:** vùng nhận mã phím thực; cần người dùng thử toàn bộ phím, ít nhất một phím mới cho phép xác nhận.
+- **Bàn phím:** vùng nhận mã phím thực, cần ít nhất 10 phím mới cho phép xác nhận; phím bổ trợ trái/phải (Caps, Shift, Ctrl, Option, Cmd, Fn) được nhận qua `flagsChanged` của macOS, vì chúng không gửi `keyDown`. Bàn phím MacBook tích hợp không có Ctrl phải — phím đó chỉ sáng khi dùng bàn phím rời.
 - **Trackpad:** vùng kéo tương tác; không phân biệt được thao tác bằng chuột rời và trackpad. Cần tự thử click/cuộn/đa điểm.
 - **Loa:** phát lời nói qua đầu ra âm thanh hiện tại; người dùng nghe và xác nhận.
 - **Microphone:** xin quyền hệ thống, ghi âm tạm và phát lại; không tự đánh giá chất lượng.
@@ -75,12 +75,30 @@ Giao diện `Kiểm tra chi tiết` có công cụ thực tế theo từng bư�
 - **Cổng kết nối:** đọc danh sách thiết bị USB/Thunderbolt bằng `system_profiler`; **không** kết luận mọi cổng vật lý tốt chỉ từ danh sách.
 - **Ngoại quan:** kiểm tra và xác nhận bằng mắt.
 
-Nút **Ổn rồi** là xác nhận của kỹ thuật viên sau thao tác, không phải máy tự động chẩn đoán. Khi không thử có nút **Chưa thử**, khi phát hiện bất thường dùng **Có lỗi** để nhập mô tả. Chưa có kiểm tra tự động SSD SMART, pin, CPU/GPU stress, hay kết luận Activation Lock.
+Nút **Ổn rồi** là xác nhận của kỹ thuật viên sau thao tác, không phải máy tự động chẩn đoán. Khi không thử có nút **Chưa thử**, khi phát hiện bất thường dùng **Có lỗi** để nhập mô tả. Chưa có CPU/GPU stress test.
 
 App có biểu tượng `AnTamMacCheck.icns` lấy từ logo SVG gốc. Build GitHub Actions có ký ad-hoc và xác minh ZIP nhưng **chưa notarized**.
 
+## Kết luận tổng hợp (Báo cáo)
+
+Trang Báo cáo tự tổng hợp từ tất cả các tab — 8 bài kiểm tra chức năng, pin, ổ lưu trữ/SMART, MDM và Activation Lock — theo thứ tự ưu tiên như PCcheck (chặn > lỗi > chưa đủ dữ liệu > lưu ý > đạt):
+
+- **KHÔNG KHUYẾN NGHỊ MUA:** phát hiện MDM/ADE, hoặc Activation Lock đang bật.
+- **PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ:** có hạng mục chức năng lỗi, pin dưới 80%, hoặc SMART báo lỗi.
+- **CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC:** còn hạng mục chức năng chưa thử.
+- **ĐÃ HOÀN TẤT KIỂM TRA — CÓ ĐIỂM CẦN LƯU Ý:** chức năng đều ổn nhưng còn điểm cần lưu ý (pin 80–89%, pin quá 1000 chu kỳ, SMART chưa đọc được, Activation Lock chưa xác định...).
+- **MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA:** chức năng đều ổn, pin từ 90%, SMART Verified, MDM cả hai mục đều Không, Activation Lock đã tắt. Vẫn chưa gồm tải CPU/GPU.
+
+Ngưỡng pin theo Apple: dưới 80% là đã suy giảm, trên 1000 chu kỳ là vượt mức thiết kế của MacBook. SMART không đọc được chỉ là chưa xác nhận, không tính là lỗi ổ.
+
+**Activation Lock** đọc được ngay trên máy, không cần mật khẩu hay xóa máy: `system_profiler SPHardwareDataType -json` trả `activation_lock_status` (`activation_lock_enabled` / `activation_lock_disabled`), chỉ có trên máy Apple Silicon / chip T2. Apple đã bỏ trang tra cứu công khai theo số serial từ 2017 nên không tra được từ xa; chắc chắn nhất vẫn là xóa máy và kích hoạt lại xem có hỏi tài khoản Apple cũ không (bước này chỉ là lựa chọn thêm, không bắt buộc).
+
+**MDM:** cả hai mục (MDM enrollment và Automated Enrollment) đều là Không thì xác nhận khoảng 80% máy không có MDM, không phải 100%. Xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc.
+
+**"An Tâm nhắn bạn"** nằm ở cuối trang Báo cáo, theo đúng cách PCcheck làm: 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (máy ổn / máy dùng được / cần thương lượng / nhiều lỗi / không nên mua); chưa đủ dữ liệu thì không có lời nhắn. Mascot cuối báo cáo đổi theo kết quả (máy ổn thì mascot checklist, còn lại mascot suy nghĩ). Kết luận tổng hợp, lời nhắn và Activation Lock đều có trong báo cáo JSON xuất ra.
+
 ## Kế hoạch tiếp theo
-Kết nối adapters cho IOKit/System Profiler, kiểm tra pin/SSD và bổ sung hướng dẫn xác minh bảo mật khi kích hoạt lại với người bán; phát triển bài kiểm tra thực tế có Stop All; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
+Bổ sung hướng dẫn xác minh bảo mật khi kích hoạt lại với người bán; phát triển bài kiểm tra thực tế có Stop All và tải CPU/GPU; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
 
 ## Giấy phép
 Dự án mới chưa nhập source của Aman Check, mac-check hoặc Battery Monitor. Bất kỳ mã bên thứ ba nào được đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
