@@ -2,49 +2,35 @@
 
 Ứng dụng kiểm tra Mac cũ trước khi mua của **Vi tính An Tâm** — https://vitinhantam.com.
 
-## Thiết kế v0.1
-- SwiftUI, nền sáng và điểm nhấn cam
-- Sidebar: Tổng quan / Phần cứng / Kiểm tra / Báo cáo
-- **Không tự chạy kiểm tra khi mở app**
-- Start/Stop là hai nút tròn
-- Đọc thông tin hệ thống cơ bản từ macOS khi bấm **Đọc cấu hình**
-- Kiểm tra các hạng mục chức năng theo wizard và ghi nhận: Ổn / Có lỗi / Chưa thử
-- Tự động đánh dấu chưa đủ dữ liệu nếu bỏ dở; xuất JSON qua hộp thoại lưu tệp
-- Footer có hyperlink Vi tính An Tâm
-- Dashboard/Báo cáo có thông tin 2 chi nhánh, bảo hành 6 tháng và nút Tham quan shop
-- Kiểm tra MDM/ADE hiện tại qua `/usr/bin/profiles status -type enrollment` (bấm thủ công, chạy nền, không tự quét khi mở app)
+> **Bán bằng tâm để bạn an tâm.**
 
-## Giới hạn hiện tại
-Đây là **bản khởi tạo chạy thử giao diện**, chưa phải phần mềm kiểm tra tự động hoàn chỉnh. Wizard hiện ghi nhận kết quả do người dùng xác nhận; chưa tự thực hiện test loa/micro, màn hình, bàn phím hay CPU/GPU stress. Pin, ổ lưu trữ/SMART và Activation Lock được đọc tự động từ hệ thống và tổng hợp vào kết luận (xem "Kết luận tổng hợp" bên dưới). Kiểm tra MDM chỉ đọc trạng thái hiện tại do macOS trả về, không xác minh được quyền sở hữu hay liên kết Apple Business/School Manager trong mọi tình huống. Không được hiểu kết luận từ wizard là chứng nhận Mac an toàn để mua.
+Mở app lên, nó tự đọc cấu hình máy rồi dẫn bạn kiểm tra từng món: màn hình, bàn phím, trackpad, loa, micro, webcam, cổng kết nối, ngoại quan, pin, ổ cứng, MDM và Activation Lock. Xong hết thì trang Báo cáo tự tổng kết lại: máy ổn hay không, còn điểm nào cần lưu ý, và một lời nhắn của An Tâm ở cuối.
 
-Logo PNG gốc chưa được đưa vào repo. App đã có mã hiển thị `AnTamLogo.png` nếu resource tồn tại và dùng biểu tượng mặc định nếu chưa có.
+App viết bằng SwiftUI, chạy trên macOS 13 trở lên. Bản hiện tại là 0.3.0.
 
-### Thông tin shop
-- Chi nhánh 1: **52 Nguyễn Cửu Vân, P. Long An, T. Tây Ninh**
-- Chi nhánh 2: **218/3 đường số 11, phường Thủ Đức, TP. Hồ Chí Minh**
-- Website: **https://vitinhantam.com**
-- Chính sách hiển thị: **Bảo hành 6 tháng nguyên máy** (nội dung giới thiệu cửa hàng, không phải cam kết phần mềm).
+## Tải về
 
-## Build trên GitHub
-1. Vào Actions → **Build An Tam Mac check** → Run workflow.
-2. Tải artifact ZIP sau khi workflow thành công.
-3. Giải nén trên Mac tương thích, mở ứng dụng. Bản này chưa ký số và chưa notarize, Gatekeeper có thể cảnh báo.
+Bản mới nhất luôn nằm ở mục **Releases** của repo này. Mỗi lần có bản build mới trên nhánh `main` là có 1 Release mới, bản mới nhất được đánh dấu Latest:
 
-Có thể chạy locally trên macOS 13+ có Swift toolchain: `swift run AnTamMacCheck`.
+- Xem tất cả các bản: https://github.com/YHresearcher/AntamMaccheck/releases
+- Tải thẳng bản mới nhất (không cần đăng nhập GitHub): https://github.com/YHresearcher/AntamMaccheck/releases/latest/download/AnTam-Mac-check-macOS.zip
 
-## Không mở được ứng dụng trên macOS
+Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`, kéo vào thư mục Applications rồi mở.
 
-Gói tải từ GitHub Actions chứa ZIP lồng nhau: giải nén artifact `AnTam-Mac-check-macOS.zip` do GitHub tạo, rồi giải nén tiếp `AnTam-Mac-check-macOS.zip` nằm bên trong để nhận `An Tam Mac check.app`.
+## Mở app lần đầu
 
-1. Kéo `An Tam Mac check.app` vào **Applications** trên Mac.
-2. Nhấp chuột phải → **Open (Mở)**. Nếu bị chặn, vào **System Settings → Privacy & Security → Open Anyway** sau khi chắc chắn tải đúng nguồn.
-3. Nếu app thoát ngay hoặc không có cửa sổ, mở **Terminal**, chạy:
+Bản này chưa ký số Apple và chưa notarize (chỉ ký ad-hoc để chống sửa đổi sau khi đóng gói), nên macOS có thể chặn lúc mở. Cách mở:
+
+1. Nhấp chuột phải vào app rồi chọn **Open (Mở)**. Nếu vẫn bị chặn, vào **System Settings → Privacy & Security → Open Anyway**.
+2. Không tắt Gatekeeper toàn hệ thống, không chạy bằng quyền root để vượt qua cảnh báo.
+
+Nếu app thoát ngay hoặc không hiện cửa sổ, mở Terminal chạy:
 
 ```bash
 "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 ```
 
-Sao chép **thông báo lỗi cuối cùng** gửi cho nhóm phát triển. Có thể xem thêm chữ ký bằng:
+Sao chép thông báo lỗi cuối cùng gửi cho nhóm phát triển. Kiểm tra thêm chữ ký và phiên bản macOS bằng:
 
 ```bash
 codesign --verify --deep --strict --verbose=2 "/Applications/An Tam Mac check.app"
@@ -52,53 +38,82 @@ file "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 sw_vers -productVersion
 ```
 
-Bản build được ký ad-hoc để đảm bảo gói `.app` không bị thay đổi sau khi đóng gói, nhưng **chưa notarize**. Vì vậy Gatekeeper vẫn có thể chặn file vừa tải về. Không nên tắt Gatekeeper trên toàn hệ thống hoặc chạy phần mềm bằng quyền root để vượt qua cảnh báo. Khi gặp lỗi, cần phân biệt rõ cảnh báo Gatekeeper, kiến trúc CPU không phù hợp, macOS quá cũ (yêu cầu macOS 13+), và app crash.
+## Cách dùng
 
-## Trải nghiệm mở ứng dụng & thương hiệu (bản cập nhật)
+Mở app là nó tự đọc cấu hình máy (model, chip, RAM, macOS) và tự đọc pin với ổ cứng, không tự chạy test nào khác. Các trang trong sidebar, theo thứ tự:
 
-- Ứng dụng **tự đọc cấu hình** khi mở. Nút Làm mới vẫn giữ ở trang Thông tin Mac để chủ động đọc lại.
-- Cửa sổ mặc định **1480 × 960**, đồng thời nới rộng khi macOS khôi phục kích thước cũ, có giới hạn theo màn hình hiện tại để không tràn màn hình.
-- Bỏ menu **Hướng dẫn**.
-- **Giới thiệu** mở cửa sổ popup riêng, có logo Vi tính An Tâm nguyên bản, hai địa chỉ chi nhánh, website và bảo hành 6 tháng.
-- Slogan thống nhất: **“Bán bằng tâm để bạn an tâm”**.
-- Thẻ thiết bị dùng **hình MacBook riêng**, không dùng ảnh laptop Windows.
+- **Tổng quan:** thẻ máy, kết quả kiểm tra nhanh 8 mục, tình trạng MDM, tóm tắt pin và ổ cứng.
+- **Kiểm tra chi tiết:** wizard 8 bước, làm từng bước một. Mỗi bước có 4 lựa chọn: **Ổn rồi**, **Có lỗi** (ghi rõ lỗi gặp phải), **Chưa thử**, **Dừng toàn bộ**. Nút **Ổn rồi** chỉ bấm được sau khi bạn đã thực hiện bài test đó, không phải cứ mở lên là đạt.
+- **Thông tin Mac:** cấu hình đọc từ macOS, có nút Làm mới để đọc lại.
+- **Sức khỏe phần cứng:** pin, ổ lưu trữ/SMART và Activation Lock (xem bên dưới).
+- **MDM & Quản lý:** kiểm tra quản lý thiết bị.
+- **Báo cáo:** kết luận tổng hợp, kết quả chi tiết, lời nhắn của An Tâm, và nút xuất báo cáo JSON (`AnTam-Mac-check-report.json`).
 
-## Tính năng kiểm tra trong bản thử mới
+### 8 bài kiểm tra chức năng
 
-Giao diện `Kiểm tra chi tiết` có công cụ thực tế theo từng bước:
-- **Màn hình:** vùng đổi 5 màu để quan sát điểm chết và ám màu; không tự nhận biết điểm chết, chưa thay thế test toàn màn hình.
-- **Bàn phím:** vùng nhận mã phím thực, cần ít nhất 10 phím mới cho phép xác nhận; phím bổ trợ trái/phải (Caps, Shift, Ctrl, Option, Cmd, Fn) được nhận qua `flagsChanged` của macOS, vì chúng không gửi `keyDown`. Bàn phím MacBook tích hợp không có Ctrl phải — phím đó chỉ sáng khi dùng bàn phím rời.
-- **Trackpad:** vùng kéo tương tác; không phân biệt được thao tác bằng chuột rời và trackpad. Cần tự thử click/cuộn/đa điểm.
-- **Loa:** phát lời nói qua đầu ra âm thanh hiện tại; người dùng nghe và xác nhận.
-- **Microphone:** xin quyền hệ thống, ghi âm tạm và phát lại; không tự đánh giá chất lượng.
-- **Webcam:** xin quyền hệ thống và phát hình xem trước; người dùng quan sát.
-- **Cổng kết nối:** đọc danh sách thiết bị USB/Thunderbolt bằng `system_profiler`; **không** kết luận mọi cổng vật lý tốt chỉ từ danh sách.
-- **Ngoại quan:** kiểm tra và xác nhận bằng mắt.
+- **Màn hình:** test toàn màn hình với 12 màu. Dùng phím ← / → để chuyển màu, Esc để thoát. Phải xem hết 12 màu mới xác nhận được. App không tự phát hiện điểm chết hay ám màu, bạn tự quan sát.
+- **Bàn phím:** gõ phím thật thì phím tương ứng trên bàn phím ảo sáng xanh. Cần nhận ít nhất 10 phím mới xác nhận được. Phím bổ trợ trái/phải (Caps, Shift, Ctrl, Option, Cmd, Fn) được nhận qua `flagsChanged` của macOS, vì chúng không gửi sự kiện bấm phím thường. Bàn phím MacBook tích hợp không có Ctrl phải, phím đó chỉ sáng khi dùng bàn phím rời.
+- **Trackpad:** chỉ cần di chuyển ngón tay trên trackpad, không cần đè click. Cần ít nhất 10 lượt di chuyển. Chuột rời cũng tạo chuyển động tương tự, nên việc xác nhận trackpad thật vẫn cần người kiểm tra (thử click, kéo, cuộn, đa điểm).
+- **Loa:** phát bản nhạc kiểm tra stereo 8 giây: 4 giây kênh trái trước, 4 giây kênh phải sau. Nghe từng bên xem có rè, méo hay lệch âm lượng không.
+- **Microphone:** bấm ghi âm, nói một câu, dừng rồi bấm nghe lại để tự đánh giá độ rõ.
+- **Webcam:** app xin quyền camera rồi hiện hình trực tiếp, bạn tự quan sát độ rõ và nhiễu.
+- **Cổng kết nối:** đọc danh sách thiết bị USB/Thunderbolt mà hệ thống nhìn thấy. Muốn chắc từng cổng thì cắm thiết bị thật vào từng cổng và xem nó có xuất hiện trong danh sách không. Danh sách có thiết bị không có nghĩa mọi cổng vật lý đều tốt.
+- **Ngoại quan:** kiểm tra bằng mắt: vỏ máy, bản lề, điểm móp, dấu tháo lắp, pin phồng, cổng sạc.
 
-Nút **Ổn rồi** là xác nhận của kỹ thuật viên sau thao tác, không phải máy tự động chẩn đoán. Khi không thử có nút **Chưa thử**, khi phát hiện bất thường dùng **Có lỗi** để nhập mô tả. Chưa có CPU/GPU stress test.
+### Pin, ổ cứng và Activation Lock
 
-App có biểu tượng `AnTamMacCheck.icns` lấy từ logo SVG gốc. Build GitHub Actions có ký ad-hoc và xác minh ZIP nhưng **chưa notarized**.
+- **Pin (Battery Analyzer):** số chu kỳ sạc, dung lượng thiết kế, dung lượng sạc đầy gần nhất, sức khỏe ước tính theo phần trăm, mức sạc hiện tại. Tỉ lệ dung lượng chỉ là ước tính, không chứng nhận pin tốt.
+- **Ổ lưu trữ và SMART:** tên ổ, dung lượng, trạng thái SMART. SMART không đọc được (thường gặp trên Apple Silicon) không có nghĩa ổ hỏng, cũng không có nghĩa ổ tốt, chỉ là chưa xác nhận được.
+- **Activation Lock:** đọc được ngay trên máy, không cần mật khẩu hay xóa máy, bằng `system_profiler SPHardwareDataType`. Chỉ có trên máy Apple Silicon hoặc chip T2. Nếu đang bật thì máy còn khóa tài khoản Apple của chủ cũ, không nên mua khi chưa gỡ. Apple đã bỏ trang tra cứu công khai theo số serial từ 2017 nên không tra được từ xa. Chắc chắn nhất vẫn là xóa máy và kích hoạt lại xem có hỏi tài khoản Apple cũ không, nhưng đó chỉ là bước thêm, không bắt buộc.
 
-## Kết luận tổng hợp (Báo cáo)
+### MDM
 
-Trang Báo cáo tự tổng hợp từ tất cả các tab — 8 bài kiểm tra chức năng, pin, ổ lưu trữ/SMART, MDM và Activation Lock — theo thứ tự ưu tiên như PCcheck (chặn > lỗi > chưa đủ dữ liệu > lưu ý > đạt):
+Bấm **Kiểm tra MDM** để app chạy `profiles status -type enrollment` và đọc 2 mục: MDM enrollment và Automated Enrollment (DEP).
 
-- **KHÔNG KHUYẾN NGHỊ MUA:** phát hiện MDM/ADE, hoặc Activation Lock đang bật.
-- **PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ:** có hạng mục chức năng lỗi, pin dưới 80%, hoặc SMART báo lỗi.
-- **CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC:** còn hạng mục chức năng chưa thử.
-- **ĐÃ HOÀN TẤT KIỂM TRA — CÓ ĐIỂM CẦN LƯU Ý:** chức năng đều ổn nhưng còn điểm cần lưu ý (pin 80–89%, pin quá 1000 chu kỳ, SMART chưa đọc được, Activation Lock chưa xác định...).
-- **MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA:** chức năng đều ổn, pin từ 90%, SMART Verified, MDM cả hai mục đều Không, Activation Lock đã tắt. Vẫn chưa gồm tải CPU/GPU.
+- Một trong hai là Có thì kết luận chặn luôn: không khuyến nghị mua cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ.
+- Cả hai đều là Không thì xác nhận khoảng **80% máy không có MDM**, không phải 100%. Muốn chắc hơn thì xóa toàn bộ máy và kích hoạt lại xem có hiện màn hình Remote Management không, nhưng đây chỉ là lựa chọn thêm, không bắt buộc. Nhớ chỉ làm khi chủ máy đồng ý và đã sao lưu dữ liệu.
+- Lệnh này chỉ đọc trạng thái hiện tại, không xác minh được quyền sở hữu hay liên kết Apple Business/School Manager trong mọi tình huống.
 
-Ngưỡng pin theo Apple: dưới 80% là đã suy giảm, trên 1000 chu kỳ là vượt mức thiết kế của MacBook. SMART không đọc được chỉ là chưa xác nhận, không tính là lỗi ổ.
+## Kết luận tổng hợp (trang Báo cáo)
 
-**Activation Lock** đọc được ngay trên máy, không cần mật khẩu hay xóa máy: `system_profiler SPHardwareDataType -json` trả `activation_lock_status` (`activation_lock_enabled` / `activation_lock_disabled`), chỉ có trên máy Apple Silicon / chip T2. Apple đã bỏ trang tra cứu công khai theo số serial từ 2017 nên không tra được từ xa; chắc chắn nhất vẫn là xóa máy và kích hoạt lại xem có hỏi tài khoản Apple cũ không (bước này chỉ là lựa chọn thêm, không bắt buộc).
+Kết luận được tổng hợp tự động từ tất cả các tab, theo thứ tự ưu tiên: chặn, rồi lỗi, rồi chưa đủ dữ liệu, rồi lưu ý, rồi đạt.
 
-**MDM:** cả hai mục (MDM enrollment và Automated Enrollment) đều là Không thì xác nhận khoảng 80% máy không có MDM, không phải 100%. Xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc.
+| Kết luận | Khi nào |
+| --- | --- |
+| **KHÔNG KHUYẾN NGHỊ MUA** | Phát hiện MDM/ADE, hoặc Activation Lock đang bật. |
+| **PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ** | Có hạng mục chức năng lỗi, pin dưới 80%, hoặc SMART báo lỗi. |
+| **CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC** | Còn hạng mục chức năng chưa thử. |
+| **ĐÃ HOÀN TẤT KIỂM TRA — CÓ ĐIỂM CẦN LƯU Ý** | Chức năng đều ổn nhưng còn điểm cần lưu ý: pin 80–89%, pin quá 1000 chu kỳ, SMART chưa đọc được, Activation Lock chưa xác định... |
+| **MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA** | Chức năng đều ổn, pin từ 90%, SMART Verified, MDM cả hai mục đều Không, Activation Lock đã tắt. |
 
-**"An Tâm nhắn bạn"** nằm ở cuối trang Báo cáo, theo đúng cách PCcheck làm: 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (máy ổn / máy dùng được / cần thương lượng / nhiều lỗi / không nên mua); chưa đủ dữ liệu thì không có lời nhắn. Mascot cuối báo cáo đổi theo kết quả (máy ổn thì mascot checklist, còn lại mascot suy nghĩ). Kết luận tổng hợp, lời nhắn và Activation Lock đều có trong báo cáo JSON xuất ra.
+Ngưỡng pin theo Apple: dưới 80% là pin đã suy giảm, nên tính chi phí thay; trên 1000 chu kỳ là vượt mức thiết kế của MacBook.
 
-## Kế hoạch tiếp theo
-Bổ sung hướng dẫn xác minh bảo mật khi kích hoạt lại với người bán; phát triển bài kiểm tra thực tế có Stop All và tải CPU/GPU; kiểm thử máy Intel và Apple Silicon; sau đó bổ sung logo nguyên gốc, địa chỉ shop, báo cáo PDF và ký số nếu phân phối.
+**"An Tâm nhắn bạn"** nằm ở cuối trang Báo cáo, theo đúng cách app PCcheck của shop làm: 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (máy ổn, máy dùng được, cần thương lượng, nhiều lỗi, không nên mua). Chưa đủ dữ liệu thì chưa có lời nhắn. Mascot cuối báo cáo cũng đổi theo kết quả. Kết luận tổng hợp, lời nhắn và Activation Lock đều có trong báo cáo JSON xuất ra.
+
+## Giới hạn cần biết
+
+- Các bài kiểm tra chức năng là do kỹ thuật viên tự quan sát và xác nhận, app không tự chẩn đoán thay bạn. Chưa có test tải CPU/GPU.
+- Kết luận không phải chứng nhận Mac an toàn để mua. Nó chỉ tổng kết những gì đã kiểm tra được trong app.
+- App không gửi dữ liệu đi đâu. Camera và micro chỉ bật khi bạn tự bắt đầu bài test đó, bản ghi âm chỉ lưu tạm trong máy.
+- Kiểm tra MDM và Activation Lock chỉ đọc trạng thái hiện tại trên máy, không thay cho việc xóa máy và kích hoạt lại để kiểm tra cuối cùng với người bán.
+
+## Build từ source
+
+Cần macOS 13 trở lên có Swift toolchain:
+
+```bash
+swift run AnTamMacCheck
+```
+
+Build trên GitHub (Actions → **Build An Tam Mac check**) chạy mỗi khi push lên `main`, khi mở pull request và khi chạy tay. Mỗi build thành công trên `main` tạo 1 Release mới (tag `build-<số build>-<lần thử>`, đánh dấu Latest) kèm file `AnTam-Mac-check-macOS.zip`. Build của pull request thì không tạo Release. Artifact của build vẫn được giữ lại trong Actions để đối chiếu.
+
+## Thông tin shop
+
+- **Vi tính An Tâm** — https://vitinhantam.com
+- Chi nhánh 1: 52 Nguyễn Cửu Vân, P. Long An, T. Tây Ninh
+- Chi nhánh 2: 218/3 đường số 11, phường Thủ Đức, TP. Hồ Chí Minh
+- Bảo hành 6 tháng nguyên máy (nội dung giới thiệu cửa hàng, không phải cam kết phần mềm).
 
 ## Giấy phép
-Dự án mới chưa nhập source của Aman Check, mac-check hoặc Battery Monitor. Bất kỳ mã bên thứ ba nào được đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
+
+Cách đọc pin tham khảo phương pháp chọn thuộc tính AppleSmartBattery của MacMonitor (MIT), không dùng giao diện hay cầu nối SMC riêng của họ — xem `THIRD_PARTY_NOTICES.md`. Dự án chưa nhập source của Aman Check, mac-check hay Battery Monitor. Bất kỳ mã bên thứ ba nào đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
