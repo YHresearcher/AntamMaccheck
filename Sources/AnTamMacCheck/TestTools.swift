@@ -178,6 +178,18 @@ final class KeyCaptureNSView: NSView {
     override var acceptsFirstResponder: Bool { true }
     override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
     override func keyDown(with event: NSEvent) { onKey?(event.keyCode) }
+    override func flagsChanged(with event: NSEvent) {
+        // Phím bổ trợ (Caps, Shift, Ctrl, Option, Cmd, Fn) KHÔNG bao giờ
+        // gửi keyDown — macOS chỉ báo qua flagsChanged, với keyCode là phím
+        // vật lý vừa đổi trạng thái (trái/phải phân biệt được: Shift trái 56,
+        // Shift phải 60, Ctrl trái 59, Ctrl phải 62, Option trái 58, Option
+        // phải 61, Cmd trái 55, Cmd phải 54, Caps 57, Fn 63). Không có hàm
+        // này thì mọi phím bổ trợ đều không bao giờ sáng trên bàn phím ảo.
+        // Chỉ nhận đúng 10 mã phím bổ trợ, bỏ qua mọi flagsChanged khác.
+        // Ghi nhận kiểu insert-only như phím thường: bấm một lần là giữ xanh.
+        let modifierKeyCodes: Set<UInt16> = [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+        if modifierKeyCodes.contains(event.keyCode) { onKey?(event.keyCode) }
+    }
 }
 
 struct CameraPreview: NSViewRepresentable {
@@ -220,7 +232,7 @@ struct DiagnosticToolView: View {
                     .background(Color.orange.opacity(0.11), in: RoundedRectangle(cornerRadius: 10))
                     .overlay(Text("Nhấp đây rồi gõ phím • Đã nhận \(tools.capturedKeys.count) phím")
                         .allowsHitTesting(false))
-                Text("Bố cục hiển thị ANSI phổ biến. Một số phím Fn và phím đặc biệt do macOS xử lý trước.")
+                Text("Bấm từng phím bổ trợ trái/phải riêng để kiểm tra: Caps, Shift, Ctrl, Option, Cmd, Fn đều sáng khi nhận. Bàn phím MacBook tích hợp không có Ctrl phải — phím đó chỉ sáng khi dùng bàn phím rời.")
                     .font(.caption).foregroundStyle(.secondary)
             case "Trackpad":
                 Text("Chỉ cần di chuyển ngón tay trên trackpad, KHÔNG cần đè click. Thử nhấp, kéo, cuộn và đa điểm riêng.")
