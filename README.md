@@ -71,7 +71,7 @@ Mở app là nó tự đọc cấu hình máy (model, chip, RAM, macOS) và tự
 Bấm **Kiểm tra MDM** để app chạy `profiles status -type enrollment` và đọc 2 mục: MDM enrollment và Automated Enrollment (DEP).
 
 - Một trong hai là Có thì kết luận chặn luôn: không khuyến nghị mua cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ.
-- Cả hai đều là Không thì xác nhận khoảng **80% máy không có MDM**, không phải 100%. Muốn chắc hơn thì xóa toàn bộ máy và kích hoạt lại xem có hiện màn hình Remote Management không, nhưng đây chỉ là lựa chọn thêm, không bắt buộc. Nhớ chỉ làm khi chủ máy đồng ý và đã sao lưu dữ liệu.
+- Cả hai đều là Không thì hệ thống của bạn có khoảng **80% là không có MDM**, không phải 100%. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị, và chỉ xóa máy kích hoạt lại xem có hiện màn hình Remote Management không khi muốn chắc chắn hơn. Nhớ chỉ làm khi chủ máy đồng ý và đã sao lưu dữ liệu.
 - Lệnh này chỉ đọc trạng thái hiện tại, không xác minh được quyền sở hữu hay liên kết Apple Business/School Manager trong mọi tình huống.
 
 ## Kết luận tổng hợp (trang Báo cáo)

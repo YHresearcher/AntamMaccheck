@@ -140,7 +140,7 @@ struct Result: Identifiable, Codable {
         case .caution:
             var text = "8/8 bài kiểm tra chức năng đều ổn. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
             if mdm.enrollment == "Không" && mdm.automatedEnrollment == "Không" {
-                text += " MDM cả hai mục đều Không — khoảng 80% máy không có MDM."
+                text += " MDM cả hai mục đều Không — hệ thống của bạn có khoảng 80% là không có MDM."
             }
             if health?.activationLock == "Đã tắt" { text += " Activation Lock đã tắt." }
             return text
@@ -153,7 +153,7 @@ struct Result: Identifiable, Codable {
                !verified.isEmpty {
                 text += "; ổ \(verified.joined(separator: ", ")) SMART Verified"
             }
-            text += "; MDM cả hai mục đều Không (khoảng 80% máy không có MDM); Activation Lock đã tắt."
+            text += "; MDM cả hai mục đều Không (hệ thống của bạn có khoảng 80% là không có MDM); Activation Lock đã tắt."
             text += " Chưa test tải CPU/GPU, và chưa xóa máy kiểm tra lại — hai bước này vẫn nên làm khi cần chắc chắn hơn, nhưng không bắt buộc."
             return text
         }
@@ -231,12 +231,12 @@ struct Result: Identifiable, Codable {
             } else {
                 status = "Chưa đủ dữ liệu"
             }
-            // Cả hai mục đều Không: chỉ xác nhận khoảng 80% máy không có MDM,
-            // không phải 100%. Xóa toàn bộ máy và kích hoạt lại chỉ là lựa
-            // chọn thêm để chắc chắn hơn, không bắt buộc.
+            // Cả hai mục đều Không: hệ thống của bạn có khoảng 80% là không
+            // có MDM, không phải 100%. Xóa toàn bộ máy và kích hoạt lại chỉ
+            // là lựa chọn thêm để chắc chắn hơn, không bắt buộc.
             let warning: String
             if enrollment == "Không" && automated == "Không" {
-                warning = "MDM enrollment và Automated Enrollment đều là Không — xác nhận khoảng 80% máy hiện không bị quản lý MDM. Để cẩn thận hơn, có thể xóa toàn bộ máy và kích hoạt lại để chắc chắn — đây chỉ là lựa chọn thêm, không bắt buộc."
+                warning = "MDM enrollment và Automated Enrollment đều là Không — hệ thống của bạn có khoảng 80% là không bị quản lý MDM. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị; xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc."
             } else {
                 warning = MDMCheck().warning
             }
@@ -748,7 +748,7 @@ struct MainView: View {
                 Label("MDM & Quản lý thiết bị", systemImage: "lock.shield.fill")
                     .font(.system(size: 20, weight: .bold))
                 Text(inspection.mdm.status == "Chưa phát hiện quản lý hiện tại"
-                     ? "Chưa phát hiện MDM — khoảng 80% máy không có MDM"
+                     ? "Hệ thống của bạn có khoảng 80% là không có MDM — để an tâm hơn, bạn nên kiểm tra thêm 2 bước dưới đây"
                      : inspection.mdm.status)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(anTamOrange)
@@ -800,7 +800,7 @@ struct MainView: View {
                 Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
                     .font(.caption).foregroundStyle(mutedInk)
                 if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
-                    Text("Cả hai mục đều là Không — xác nhận khoảng 80% máy không có MDM, không phải 100%. Muốn chắc chắn hơn thì xóa toàn bộ máy và kích hoạt lại, nhưng không bắt buộc.")
+                    Text("Cả hai mục đều là Không — hệ thống của bạn có khoảng 80% là không có MDM, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
                         .font(.caption.bold()).foregroundStyle(anTamOrange)
                 } else {
                     Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
