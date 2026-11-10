@@ -6,7 +6,9 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  # contents: write để bước Release cuối workflow tạo được GitHub Release.
+  # Với read thì bước đó sẽ 403 (đã gặp ở PCcheck).
+  contents: write
 
 jobs:
   build:
@@ -161,3 +163,19 @@ jobs:
           name: AnTam-Mac-check-macOS
           path: AnTam-Mac-check-macOS.zip
           if-no-files-found: error
+      # Mỗi build thành công trên main tạo 1 Release riêng (theo mẫu PCcheck):
+      # tag build-<số build>-<lần thử> nên không bao giờ trùng, kể cả chạy lại;
+      # --latest để bản mới nhất luôn là bản tải ở releases/latest.
+      # Chỉ chạy khi push / chạy tay trên main — build của pull request thì không.
+      - name: Publish this build as a GitHub Release
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="build-${{ github.run_number }}-${{ github.run_attempt }}"
+          gh release create "$TAG" "AnTam-Mac-check-macOS.zip" \
+            --title "Build ${{ github.run_number }} (${GITHUB_SHA:0:7})" \
+            --generate-notes \
+            --latest
+          echo "Published release $TAG"
