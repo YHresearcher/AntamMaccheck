@@ -710,7 +710,7 @@ struct MainView: View {
             overviewDeviceCard
             HStack(alignment: .top, spacing: 12) {
                 overviewMDMCard.frame(maxWidth: .infinity, maxHeight: .infinity)
-                overviewActivationCard.frame(width: 310, maxHeight: .infinity)
+                overviewActivationCard.frame(width: 310).frame(maxHeight: .infinity)
             }
             HStack(alignment: .top, spacing: 12) {
                 overviewSummaryCard.frame(maxWidth: .infinity)
