@@ -414,6 +414,7 @@ struct MainView: View {
     @State private var page: Page = .overview
     @State private var showIssue = false
     @State private var showAbout = false
+    @State private var showMDMDetails = false
     @StateObject private var tools = DiagnosticSession()
     @StateObject private var health = HardwareHealthModel()
 
@@ -467,16 +468,19 @@ struct MainView: View {
                     case .report: report
                     }
                     Spacer(minLength: 10)
-                }.padding(26).frame(maxWidth: 1160, alignment: .leading)
+                }.padding(22).frame(maxWidth: 1360, alignment: .leading)
             }.background(backgroundColor)
         }
         // Brand uses fixed light surfaces. Never inherit white text from macOS Dark Mode.
         .preferredColorScheme(.light)
         .foregroundStyle(ink)
         .tint(anTamOrange)
-        .frame(minWidth: 940, minHeight: 680)
+        .frame(minWidth: 1050, minHeight: 680)
         .sheet(isPresented: $showAbout) {
             aboutPopup
+        }
+        .sheet(isPresented: $showMDMDetails) {
+            mdmDetail.padding(24).frame(width: 660, height: 430)
         }
         .onAppear {
             // Mở rộng ngay cả khi macOS khôi phục kích thước cửa sổ cũ.
@@ -497,6 +501,7 @@ struct MainView: View {
             // Tự đọc cấu hình, không tự chạy stress test hay can thiệp quyền riêng tư.
             if inspection.hardware.isEmpty { inspection.readHardware() }
             if health.snapshot.readAt == nil { health.refresh() }
+            if inspection.mdm.checkedAt.isEmpty { inspection.checkMDM() }
         }
         .alert("Ghi nhận lỗi", isPresented: $showIssue) {
             TextField("Bạn gặp lỗi gì?", text: $inspection.errorNote)
@@ -575,7 +580,8 @@ struct MainView: View {
         VStack(alignment: .leading, spacing: 14, content: content)
             .padding(20).frame(maxWidth: .infinity, alignment: .leading)
             .foregroundStyle(ink)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.gray.opacity(0.12), lineWidth: 1))
     }
     private func statusLine(_ label: String, _ detail: String, symbol: String, done: Bool) -> some View {
         HStack(spacing: 12) {
@@ -660,97 +666,171 @@ struct MainView: View {
          .frame(maxWidth: .infinity, alignment: .leading)
          .background(backgroundColor, in: RoundedRectangle(cornerRadius: 12))
     }
+
+    // Dashboard v1.2: match the approved card hierarchy rather than reflowing
+    // feature cards into unrelated sections. The detailed test list lives in
+    // "Kiểm tra chi tiết", never on this dashboard.
     private var overview: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Tổng quan thiết bị").font(.system(size: 29, weight: .bold))
-                    Text("Thông tin Mac, trạng thái bảo mật và tiến độ các bài kiểm tra.")
-                        .font(.subheadline).foregroundStyle(mutedInk)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tổng quan thiết bị").font(.system(size: 30, weight: .bold))
+                    Text("Màn hình này hiển thị thông tin Mac, trạng thái bảo mật và tiến độ các bài kiểm tra.")
+                        .font(.system(size: 13)).foregroundStyle(mutedInk)
                 }
                 Spacer()
-                Button("Kiểm tra lại") {
+                Button {
                     inspection.readHardware()
                     health.refresh()
                     inspection.checkMDM()
-                }
-                Button("Xuất báo cáo") { inspection.exportJSON(health: health.snapshot) }
+                } label: {
+                    Label("Kiểm tra lại", systemImage: "arrow.clockwise")
+                }.buttonStyle(.bordered)
+                Button { inspection.exportJSON(health: health.snapshot) } label: {
+                    Label("Xuất báo cáo", systemImage: "square.and.arrow.up")
+                }.buttonStyle(.bordered).foregroundStyle(anTamOrange)
             }
-            card {
-                Label("Thông tin Mac", systemImage: "laptopcomputer")
-                    .font(.title3.bold()).foregroundStyle(ink)
-                HStack(alignment: .center, spacing: 20) {
-                    assetImage("MacBookPreview", width: 250, height: 170)
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(macDisplayName).font(.system(size: 21, weight: .bold))
-                        Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")").font(.caption).foregroundStyle(mutedInk)
-                        Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")").font(.subheadline)
-                        Text("Số nhân CPU: \(inspection.hardware["CPU logic"] ?? "Chưa đọc")").font(.subheadline)
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                    VStack(spacing: 10) {
-                        HStack(spacing: 10) {
-                            summaryTile("RAM", ramDescription, icon: "memorychip")
-                            summaryTile("SSD", health.snapshot.storage.first?.capacity ?? "Chưa đọc", icon: "internaldrive")
-                        }
-                        HStack(spacing: 10) {
-                            let battery = health.snapshot.battery
-                            summaryTile("Pin", battery.healthPercent.map { String(format: "%.0f%% sức khỏe", $0) } ?? "Chưa xác định", icon: "battery.100percent", color: .green)
-                            summaryTile("Trạng thái pin", (battery.isCharging.map { $0 ? "Đang sạc" : "Không sạc" } ?? "Chưa xác định") + " · " + (battery.chargePercent.map { "\($0)%" } ?? "—"), icon: "bolt")
-                        }
-                        summaryTile("macOS", inspection.hardware["macOS"] ?? "Chưa đọc", icon: "apple.logo")
-                    }.frame(maxWidth: 480)
-                }
-            }
+            overviewDeviceCard
             HStack(alignment: .top, spacing: 16) {
-                card {
-                    HStack {
-                        Label("MDM (Quản lý thiết bị)", systemImage: "gearshape.2")
-                            .font(.headline)
-                        Spacer()
-                        Button(inspection.checkingMDM ? "Đang kiểm tra" : "Kiểm tra lại") {
-                            inspection.checkMDM()
-                        }.disabled(inspection.checkingMDM)
-                    }
-                    Text(inspection.mdm.status)
-                        .font(.subheadline.bold())
-                        .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : Color.green)
-                    Text("MDM enrollment: \(inspection.mdm.enrollment)").font(.caption)
-                    Text("Automated enrollment: \(inspection.mdm.automatedEnrollment)").font(.caption)
-                    Text("Chỉ phản ánh trạng thái hiện tại của macOS, không xác nhận đăng ký tổ chức sau khi kích hoạt lại.")
-                        .font(.caption).foregroundStyle(mutedInk)
-                }
-                card {
-                    Label("Activation Lock", systemImage: "lock.shield")
-                        .font(.headline)
-                    Text(health.snapshot.activationLock)
-                        .font(.subheadline.bold())
-                        .foregroundStyle(health.snapshot.activationLock == "Đã bật" ? Color.red : Color.green)
-                    Text("Đọc từ trạng thái mà macOS cung cấp.")
-                        .font(.caption).foregroundStyle(mutedInk)
-                }
+                overviewMDMCard.frame(maxWidth: .infinity)
+                overviewActivationCard.frame(width: 310)
             }
-            card {
-                HStack {
-                    Label("Kết quả kiểm tra nhanh", systemImage: "checkmark.circle")
-                        .font(.title3.bold())
-                    Spacer()
-                    Text("\(passCount)/\(inspection.checks.count)")
-                        .font(.system(size: 25, weight: .bold)).foregroundStyle(anTamOrange)
+            overviewSummaryCard
+        }
+    }
+
+    private var overviewDeviceCard: some View {
+        card {
+            Label("Thông tin Mac", systemImage: "laptopcomputer")
+                .font(.system(size: 19, weight: .bold))
+            HStack(alignment: .center, spacing: 18) {
+                assetImage("MacBookPreview", width: 245, height: 165)
+                    .frame(width: 245)
+                Rectangle().fill(Color.gray.opacity(0.16)).frame(width: 1, height: 155)
+                VStack(alignment: .leading, spacing: 11) {
+                    Text(macDisplayName)
+                        .font(.system(size: 19, weight: .bold)).fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 8) {
+                        Image(systemName: "laptopcomputer").foregroundStyle(mutedInk)
+                        Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")")
+                    }
+                    HStack(spacing: 8) {
+                        Image(systemName: "cpu").foregroundStyle(mutedInk)
+                        Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")")
+                    }
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.stack.3d.up").foregroundStyle(mutedInk)
+                        Text("Số nhân: \(inspection.hardware["CPU logic"] ?? "Chưa đọc") CPU")
+                    }
                 }
-                ProgressView(value: Double(passCount), total: Double(inspection.checks.count))
-                    .tint(.green)
-                HStack(spacing: 20) {
-                    Label("\(passCount) Đạt", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-                    Label("\(failCount) Có lỗi", systemImage: "xmark.circle.fill").foregroundStyle(.red)
-                    Label("\(remainingCount) Chưa thử", systemImage: "minus.circle.fill").foregroundStyle(mutedInk)
-                    Spacer()
-                    Button("Tiếp tục kiểm tra chi tiết →") {
-                        if !inspection.running && inspection.step < inspection.checks.count { inspection.resume() }
-                        page = .inspection
-                    }.buttonStyle(.borderedProminent)
-                }.font(.subheadline)
+                .font(.system(size: 12))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+                VStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        summaryTile("RAM", ramDescription, icon: "memorychip")
+                        summaryTile("SSD", health.snapshot.storage.first?.capacity ?? "Chưa đọc", icon: "internaldrive")
+                    }
+                    HStack(spacing: 10) {
+                        let b = health.snapshot.battery
+                        summaryTile("Pin", b.healthPercent.map { String(format: "%.0f%% (độ chai %.0f%%)", $0, max(0, 100 - $0)) } ?? "Chưa xác định", icon: "battery.100percent", color: .green)
+                        summaryTile("Trạng thái pin",
+                                    b.isCharging.map { $0 ? "Đang sạc" : "Không sạc" } ?? "Chưa xác định",
+                                    icon: "bolt")
+                    }
+                    summaryTile("macOS", inspection.hardware["macOS"] ?? "Chưa đọc", icon: "apple.logo")
+                }.frame(width: 390)
             }
         }
+    }
+
+    private var overviewMDMCard: some View {
+        card {
+            HStack {
+                Label("MDM (Quản lý thiết bị)", systemImage: "gearshape.2.fill")
+                    .font(.system(size: 17, weight: .bold))
+                Spacer()
+                Button("Xem chi tiết →") { showMDMDetails = true }
+                    .buttonStyle(.bordered)
+            }
+            HStack(spacing: 8) {
+                Image(systemName: inspection.mdm.status == "Phát hiện quản lý" ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : Color.green)
+                Text(inspection.mdm.status).font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : ink)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.green.opacity(0.08), in: Capsule())
+            Text("MDM enrollment: \(inspection.mdm.enrollment)").font(.caption)
+            Text("Automated enrollment: \(inspection.mdm.automatedEnrollment)").font(.caption)
+            Divider()
+            Text("Kết quả phản ánh trạng thái hiện tại của macOS. Chưa xác minh đăng ký tổ chức sau khi kích hoạt lại.")
+                .font(.system(size: 11)).foregroundStyle(mutedInk)
+        }
+    }
+
+    private var overviewActivationCard: some View {
+        card {
+            Label("Activation Lock", systemImage: "lock.shield")
+                .font(.system(size: 17, weight: .bold))
+            HStack {
+                Image(systemName: health.snapshot.activationLock == "Đã tắt" ? "checkmark.circle.fill" : "questionmark.circle.fill")
+                    .foregroundStyle(health.snapshot.activationLock == "Đã tắt" ? Color.green : anTamOrange)
+                Text(health.snapshot.activationLock)
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.green.opacity(0.08), in: Capsule())
+            Text("Trạng thái do macOS cung cấp, không tự suy đoán.").font(.caption).foregroundStyle(mutedInk)
+            Spacer(minLength: 12)
+        }
+    }
+
+    private var overviewSummaryCard: some View {
+        card {
+            Label("Kết quả kiểm tra nhanh", systemImage: "checkmark.circle")
+                .font(.system(size: 19, weight: .bold))
+            HStack(alignment: .center, spacing: 22) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text("Đã pass").font(.system(size: 19, weight: .bold))
+                        Text("\(passCount)/\(inspection.checks.count)")
+                            .font(.system(size: 25, weight: .bold)).foregroundStyle(.green)
+                        Text("bài kiểm tra.").font(.system(size: 19, weight: .bold))
+                    }
+                    ProgressView(value: Double(passCount), total: Double(inspection.checks.count))
+                        .tint(.green)
+                    HStack(spacing: 10) {
+                        summaryNumber("\(passCount)", "Đạt", "checkmark.circle.fill", .green)
+                        summaryNumber("\(failCount)", "Có lỗi", "exclamationmark.circle.fill", .red)
+                        summaryNumber("\(remainingCount)", "Chưa thử", "minus.circle.fill", .gray)
+                    }
+                    Button {
+                        if !inspection.running && inspection.step < inspection.checks.count { inspection.resume() }
+                        page = .inspection
+                    } label: {
+                        Label("Tiếp tục kiểm tra chi tiết", systemImage: "arrow.right")
+                            .font(.system(size: 15, weight: .bold))
+                            .frame(maxWidth: .infinity).padding(.vertical, 9)
+                    }
+                    .buttonStyle(.borderedProminent).tint(anTamOrange)
+                }.frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func summaryNumber(_ count: String, _ label: String, _ symbol: String, _ color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol).foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(count).font(.system(size: 20, weight: .bold))
+                Text(label).font(.caption)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(color.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+        .frame(maxWidth: .infinity)
     }
 
     private func symbolForTest(_ name: String) -> String {
