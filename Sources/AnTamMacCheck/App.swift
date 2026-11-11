@@ -695,8 +695,49 @@ struct MainView: View {
                 overviewMDMCard.frame(maxWidth: .infinity)
                 overviewActivationCard.frame(width: 310)
             }
-            overviewSummaryCard
+            HStack(alignment: .top, spacing: 16) {
+                overviewSummaryCard.frame(maxWidth: .infinity)
+                overviewTestListCard.frame(maxWidth: .infinity)
+            }
         }
+    }
+
+    private var overviewTestListCard: some View {
+        card {
+            Label("Danh sách bài kiểm tra (\(inspection.checks.count))", systemImage: "list.bullet")
+                .font(.system(size: 17, weight: .bold))
+            let names = inspection.checks
+            let midpoint = (names.count + 1) / 2
+            HStack(alignment: .top, spacing: 14) {
+                dashboardTestColumn(Array(names.prefix(midpoint)))
+                Rectangle().fill(Color.gray.opacity(0.17)).frame(width: 1)
+                dashboardTestColumn(Array(names.dropFirst(midpoint)))
+            }
+        }
+    }
+
+    private func dashboardTestColumn(_ names: [String]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(names, id: \.self) { name in
+                let result = inspection.results.first { $0.name == name }
+                let passed = result?.status == "Ổn"
+                let failed = result?.status == "Có lỗi"
+                HStack(spacing: 7) {
+                    Image(systemName: passed ? "checkmark.circle.fill" :
+                           failed ? "xmark.circle.fill" : "minus.circle.fill")
+                        .foregroundStyle(passed ? Color.green : failed ? Color.red : Color.gray)
+                    Text(name).font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(passed ? "Đạt" : failed ? "Có lỗi" : "Chưa thử")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(passed ? Color.green : failed ? Color.red : mutedInk)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background((passed ? Color.green : failed ? Color.red : Color.gray).opacity(0.08), in: Capsule())
+                }.padding(.vertical, 7)
+                Divider().opacity(0.45)
+            }
+        }.frame(maxWidth: .infinity)
     }
 
     private var overviewDeviceCard: some View {
