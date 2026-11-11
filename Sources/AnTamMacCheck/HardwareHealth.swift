@@ -26,9 +26,14 @@ struct StorageSnapshot: Identifiable {
     let smart: String
     let source: String
 }
+struct StorageVolumeSnapshot: Identifiable {
+    let id: String
+    let name: String
+}
 struct HardwareHealthSnapshot {
     var battery = BatterySnapshot()
     var storage: [StorageSnapshot] = []
+    var storageVolumes: [StorageVolumeSnapshot] = []
     var diskInfo = ""
     var status = "Chưa đọc dữ liệu"
     var readAt: Date?
@@ -79,46 +84,75 @@ enum NativeHealthProbe {
         }
         return nil
     }
-    private static func storage() -> ([StorageSnapshot], String) {
-        // system_profiler provides a read-only inventory. SMART may be absent
-        // on Apple Silicon, USB, bridged or external disks.
+    /// Only physical devices are shown as SSDs. APFS volumes are not disks:
+    /// SPNVMeDataType may nest them under a device, while SPStorageDataType
+    /// repeats the same volumes independently. Never count either as SSDs.
+    private static func storage() -> ([StorageSnapshot], [StorageVolumeSnapshot], String) {
         guard let output = run("/usr/sbin/system_profiler",
-                               ["SPNVMeDataType", "SPSerialATADataType", "SPStorageDataType", "-json"]),
+                               ["SPNVMeDataType", "SPSerialATADataType", "-json"]),
               let root = try? JSONSerialization.jsonObject(with: Data(output.utf8)) as? [String: Any]
-        else { return ([], "system_profiler không trả dữ liệu lưu trữ.") }
-        var records: [StorageSnapshot] = []
+        else { return ([], apfsVolumes(), "Không đọc được danh sách ổ vật lý từ system_profiler.") }
+
+        var disks: [StorageSnapshot] = []
         var seen = Set<String>()
-        func walk(_ value: Any, source: String) {
-            if let nodes = value as? [Any] {
-                nodes.forEach { walk($0, source: source) }
-                return
+        for section in ["SPNVMeDataType", "SPSerialATADataType"] {
+            guard let controllers = root[section] as? [[String: Any]] else { continue }
+            // Controllers may contain a physical device under "items"; never
+            // recurse further into its "volumes", "partitions", etc.
+            func appendPhysical(_ node: [String: Any]) {
+                let name = field(node, ["device_model", "model"])
+                let capacity = field(node, ["size", "capacity", "spnvme_capacity"])
+                    ?? (node["size_in_bytes"] as? NSNumber).map {
+                        ByteCountFormatter.string(fromByteCount: $0.int64Value, countStyle: .decimal)
+                    }
+                guard let name, let capacity, !name.isEmpty else { return }
+                // Identity intentionally excludes the source path: duplicate
+                // sightings of the same device must not count twice.
+                let identity = (name + "|" + capacity).lowercased()
+                guard seen.insert(identity).inserted else { return }
+                let smart = field(node, ["smart_status", "smart", "SMART", "s_m_a_r_t_status"])
+                disks.append(StorageSnapshot(id: identity, name: name, capacity: capacity,
+                                             smart: smart ?? "Không khả dụng", source: section))
             }
-            guard let node = value as? [String: Any] else { return }
-            let name = field(node, ["device_model", "model", "_name", "medium_type"])
-            let capacity = field(node, ["size", "capacity", "spnvme_capacity"]) ?? (node["size_in_bytes"] as? NSNumber).map { ByteCountFormatter.string(fromByteCount: $0.int64Value, countStyle: .decimal) }
-            let smart = field(node, ["smart_status", "smart", "SMART", "s_m_a_r_t_status"])
-            let hardwareLike = node.keys.contains("smart_status")
-                || node.keys.contains("device_model")
-                || node.keys.contains("physical_drive")
-                || node.keys.contains("size_in_bytes")
-            if hardwareLike, let name, let capacity {
-                let key = source + ":" + name + ":" + capacity
-                if seen.insert(key).inserted {
-                    records.append(StorageSnapshot(id: key, name: name, capacity: capacity,
-                        smart: smart ?? "Không khả dụng", source: source))
+            for controller in controllers {
+                if let items = controller["_items"] as? [[String: Any]] {
+                    items.forEach(appendPhysical)
+                } else if let items = controller["items"] as? [[String: Any]] {
+                    items.forEach(appendPhysical)
+                } else {
+                    appendPhysical(controller)
                 }
             }
-            for (key, child) in node where child is [Any] || child is [String: Any] {
-                walk(child, source: source + "/" + key)
+        }
+        let volumes = apfsVolumes()
+        let note = disks.isEmpty
+            ? "Chưa nhận diện được ổ vật lý; không suy luận SSD hỏng."
+            : "Chỉ liệt kê ổ vật lý. APFS volumes được hiển thị riêng; SMART không khả dụng không đồng nghĩa SSD lỗi."
+        return (disks, volumes, note)
+    }
+
+    /// Read APFS volumes independently and use their identifiers to remove
+    /// duplicate entries. The list is informational, not a health verdict.
+    private static func apfsVolumes() -> [StorageVolumeSnapshot] {
+        guard let raw = run("/usr/sbin/diskutil", ["apfs", "list", "-plist"]),
+              let data = raw.data(using: .utf8),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let root = plist as? [String: Any],
+              let containers = root["Containers"] as? [[String: Any]]
+        else { return [] }
+        var volumes: [StorageVolumeSnapshot] = []
+        var seen = Set<String>()
+        for container in containers {
+            guard let nodes = container["Volumes"] as? [[String: Any]] else { continue }
+            for node in nodes {
+                guard let identifier = node["DeviceIdentifier"] as? String,
+                      !identifier.isEmpty, seen.insert(identifier).inserted else { continue }
+                let name = (node["Name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                    ?? (node["APFSVolumeName"] as? String) ?? identifier
+                volumes.append(StorageVolumeSnapshot(id: identifier, name: name))
             }
         }
-        for section in ["SPNVMeDataType", "SPSerialATADataType", "SPStorageDataType"] {
-            if let values = root[section] { walk(values, source: section) }
-        }
-        if records.isEmpty {
-            return ([], "Chưa xác định được ổ lưu trữ từ system_profiler. Không suy luận SSD hỏng.")
-        }
-        return (records, "Dữ liệu hệ thống chỉ xác nhận ổ được nhận diện; SMART không khả dụng không phải lỗi ổ.")
+        return volumes.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
     /// Activation Lock đọc được ngay trên máy, không cần mật khẩu hay xóa máy:
     /// system_profiler SPHardwareDataType -json trả activation_lock_status =
@@ -141,9 +175,9 @@ enum NativeHealthProbe {
     }
     static func collect() -> HardwareHealthSnapshot {
         let battery = battery()
-        let (disks, note) = storage()
+        let (disks, volumes, note) = storage()
         return HardwareHealthSnapshot(battery: battery, storage: disks,
-                                      diskInfo: note, status: "Đã thu thập dữ liệu khả dụng",
+                                      storageVolumes: volumes, diskInfo: note, status: "Đã thu thập dữ liệu khả dụng",
                                       readAt: Date(), activationLock: activationLock())
     }
 }
@@ -205,6 +239,19 @@ struct HardwareHealthView: View {
                             Text("Nguồn: \(disk.source)").font(.caption).foregroundStyle(.secondary)
                         }
                         Divider()
+                    }
+                    if !model.snapshot.storageVolumes.isEmpty {
+                        DisclosureGroup("Xem các volume APFS (\(model.snapshot.storageVolumes.count))") {
+                            ForEach(model.snapshot.storageVolumes) { volume in
+                                HStack {
+                                    Text(volume.name)
+                                    Spacer()
+                                    Text(volume.id).foregroundStyle(.secondary)
+                                }.font(.caption)
+                            }
+                            Text("Các volume nằm bên trong ổ vật lý, không phải ổ cứng riêng.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     Text(model.snapshot.diskInfo)
                         .font(.caption).foregroundStyle(.secondary)
