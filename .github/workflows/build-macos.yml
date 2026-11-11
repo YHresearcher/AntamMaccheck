@@ -129,8 +129,11 @@ jobs:
           if [ -f "resources/AnTamLogo.png" ]; then
             cp "resources/AnTamLogo.png" "$APP/Contents/Resources/AnTamLogo.png"
           fi
-          for asset in MascotSidebar MacBookPreview; do
+          for asset in MascotSidebar MacBookPreview MacBookPhoto; do
             cp "resources/$asset.png" "$APP/Contents/Resources/$asset.png"
+          done
+          for icon in resources/Icon*.png; do
+            cp "$icon" "$APP/Contents/Resources/"
           done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
           plutil -lint "$APP/Contents/Info.plist"

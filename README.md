@@ -1,4 +1,4 @@
-# An Tâm Mac check
+# An Tâm  Check
 
 Ứng dụng kiểm tra Mac cũ trước khi mua của **Vi tính An Tâm** — https://vitinhantam.com.
 
@@ -69,7 +69,7 @@ Nút **Giới thiệu** ở sidebar mở bảng giới thiệu shop (logo, sloga
 
 ### MDM
 
-Bấm **Kiểm tra MDM** để app chạy `profiles status -type enrollment` và đọc 2 mục: MDM enrollment và Automated Enrollment (DEP).
+App tự chạy kiểm tra MDM khi mở lên (và khi bấm **Kiểm tra lại**): chạy `profiles status -type enrollment` và đọc 2 mục: MDM enrollment và Automated Enrollment (DEP). Hai bước kiểm tra thêm (hồ sơ quản lý, xóa máy kích hoạt lại) hiện ngay trong thẻ MDM ở trang Tổng quan, không còn trang chi tiết riêng.
 
 - Một trong hai là Có thì kết luận chặn luôn: không khuyến nghị mua cho tới khi chủ sở hữu giải trình và gỡ quản lý hợp lệ.
 - Cả hai đều là Không thì thiết bị của bạn có khoảng **80% là không có MDM**, không phải 100%. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị, và chỉ xóa máy kích hoạt lại xem có hiện màn hình Remote Management không khi muốn chắc chắn hơn. Nhớ chỉ làm khi chủ máy đồng ý và đã sao lưu dữ liệu.

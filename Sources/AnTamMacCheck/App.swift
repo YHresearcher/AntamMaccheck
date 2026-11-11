@@ -379,7 +379,7 @@ struct Result: Identifiable, Codable {
         panel.allowedContentTypes = [.json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let payload: [String: Any] = [
-            "application": "An Tâm Mac check",
+            "application": "An Tâm \u{F8FF} Check",
             "shop": Shop.name,
             "website": Shop.website.absoluteString,
             "address": Shop.address,
@@ -423,7 +423,7 @@ struct Result: Identifiable, Codable {
         do {
             let bytes = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
             try bytes.write(to: url, options: .atomic)
-            info = "Đã lưu báo cáo. Cảm ơn bạn đã dùng An Tâm Mac check!"
+            info = "Đã lưu báo cáo. Cảm ơn bạn đã dùng An Tâm \u{F8FF} Check!"
         } catch { info = "Chưa lưu được báo cáo: \(error.localizedDescription)" }
     }
 }
@@ -440,12 +440,37 @@ enum Page: String, CaseIterable, Identifiable {
     }
 }
 
+/// Nút nổi 3D: nền gradient sáng trên đậm dưới, viền mỏng, bóng đổ; khi bấm thì lún xuống.
+struct RaisedButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    var prominent: Bool = false
+    var tint: Color = anTamOrange
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(prominent ? .white : tint)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(
+                LinearGradient(
+                    colors: prominent
+                        ? [tint, tint.opacity(0.8)]
+                        : [Color.white, Color(red: 0.965, green: 0.955, blue: 0.945)],
+                    startPoint: .top, endPoint: .bottom),
+                in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(prominent ? tint.opacity(0.45) : Color.black.opacity(0.12), lineWidth: 1))
+            .shadow(color: .black.opacity(configuration.isPressed ? 0.05 : 0.14),
+                    radius: configuration.isPressed ? 1 : 4, x: 0, y: configuration.isPressed ? 1 : 3)
+            .offset(y: configuration.isPressed ? 1 : 0)
+            .opacity(isEnabled ? 1 : 0.45)
+    }
+}
+
 struct MainView: View {
     @StateObject private var inspection = Inspection()
     @State private var page: Page = .overview
     @State private var showIssue = false
     @State private var showAbout = false
-    @State private var showMDMDetails = false
     @StateObject private var tools = DiagnosticSession()
     @StateObject private var health = HardwareHealthModel()
 
@@ -455,7 +480,7 @@ struct MainView: View {
                 HStack(spacing: 10) {
                     assetImage("AnTamLogo", width: 55, height: 55)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("An Tâm Mac check").font(.system(size: 17, weight: .bold))
+                        Text("An Tâm \(Image(systemName: "apple.logo")) Check").font(.system(size: 17, weight: .bold))
                         Text("Bán bằng tâm để bạn yên tâm")
                             .font(.system(size: 10)).foregroundStyle(mutedInk)
                     }
@@ -465,8 +490,14 @@ struct MainView: View {
                     navButton(.inspection, "magnifyingglass")
                     navButton(.report, "chart.bar.fill")
                     Button { showAbout = true } label: {
-                        Label("Giới thiệu", systemImage: "info.circle")
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                        HStack(spacing: 13) {
+                            brandIcon("IconInfo", fallback: "info.circle", size: 24)
+                            Text("Giới thiệu").font(.system(size: 14, weight: .medium))
+                            Spacer()
+                        }
+                        .foregroundStyle(ink)
+                        .padding(.horizontal, 13).padding(.vertical, 12)
+                        .background(Color.white.opacity(0.56), in: RoundedRectangle(cornerRadius: 12))
                     }.buttonStyle(.plain)
                 }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
@@ -506,18 +537,16 @@ struct MainView: View {
         .preferredColorScheme(.light)
         .foregroundStyle(ink)
         .tint(anTamOrange)
+        .buttonStyle(RaisedButtonStyle())
         .frame(minWidth: 1050, minHeight: 680)
         .sheet(isPresented: $showAbout) {
             aboutPopup
-        }
-        .sheet(isPresented: $showMDMDetails) {
-            mdmDetail.padding(24).frame(width: 660, height: 430)
         }
         .onAppear {
             // Mở rộng ngay cả khi macOS khôi phục kích thước cửa sổ cũ.
             DispatchQueue.main.async {
                 let window = NSApp.keyWindow
-                    ?? NSApp.windows.first(where: { $0.title.contains("An Tâm Mac check") })
+                    ?? NSApp.windows.first(where: { $0.title.contains("An Tâm") })
                 if let window, !window.styleMask.contains(.fullScreen),
                    let screen = window.screen ?? NSScreen.main {
                     let visible = screen.visibleFrame
@@ -568,7 +597,7 @@ struct MainView: View {
             }
             .font(.system(size: 13))
             .frame(maxWidth: .infinity, alignment: .leading)
-            Text("An Tâm Mac check — công cụ hỗ trợ kiểm tra Mac đã qua sử dụng")
+            Text("An Tâm \u{F8FF} Check — công cụ hỗ trợ kiểm tra Mac đã qua sử dụng")
                 .font(.caption).foregroundStyle(mutedInk)
             Button("Đóng") { showAbout = false }
                 .keyboardShortcut(.cancelAction)
@@ -587,16 +616,58 @@ struct MainView: View {
                let img = NSImage(contentsOfFile: path) {
                 Image(nsImage: img).resizable().scaledToFit()
             } else {
-                Image(systemName: name == "MacBookPreview" ? "laptopcomputer" : "checkmark.shield.fill")
+                Image(systemName: name == "MacBookPreview" || name == "MacBookPhoto" ? "laptopcomputer" : "checkmark.shield.fill")
                     .resizable().scaledToFit().foregroundStyle(anTamOrange)
             }
         }.frame(width: width, height: height)
     }
 
+    /// Icon thương hiệu (file PNG user gửi, nền đã tách) — fallback về SF Symbol nếu file chưa có trong bundle.
+    private func brandIcon(_ asset: String?, fallback: String, size: CGFloat) -> some View {
+        Group {
+            if let asset, let path = Bundle.main.path(forResource: asset, ofType: "png"),
+               let img = NSImage(contentsOfFile: path) {
+                Image(nsImage: img).resizable().scaledToFit()
+            } else {
+                Image(systemName: fallback).resizable().scaledToFit()
+            }
+        }.frame(width: size, height: size)
+    }
+
+    /// Map tên SF Symbol sang file icon thương hiệu (grid user gửi). Nil = không có bản custom.
+    private func customIconAsset(for symbol: String) -> String? {
+        switch symbol {
+        case "laptopcomputer": return "IconLaptop"
+        case "cpu": return "IconChip"
+        case "square.stack.3d.up": return "IconLayers"
+        case "memorychip": return "IconRAM"
+        case "internaldrive": return "IconDrive"
+        case "battery.100percent": return "IconBattery"
+        case "bolt": return "IconBolt"
+        case "apple.logo": return "IconMacOS"
+        case "gearshape.2.fill": return "IconGear"
+        case "lock.shield": return "IconLock"
+        case "checkmark.circle": return "IconCheck"
+        case "list.bullet": return "IconList"
+        case "house.fill": return "IconHouse"
+        case "magnifyingglass": return "IconSearch"
+        case "chart.bar.fill": return "IconChart"
+        case "info.circle": return "IconInfo"
+        case "square.and.arrow.up": return "IconDownload"
+        case "checkmark.circle.fill": return "IconPass"
+        case "xmark.circle.fill": return "IconFail"
+        case "minus.circle.fill": return "IconUntested"
+        case "exclamationmark.circle.fill": return "IconFail"
+        case "exclamationmark.triangle.fill": return "IconFail"
+        case "lock.fill": return "IconLock"
+        default: return nil
+        }
+    }
+
     private func navButton(_ destination: Page, _ icon: String) -> some View {
         Button { page = destination } label: {
             HStack(spacing: 13) {
-                Image(systemName: icon).frame(width: 23)
+                brandIcon(customIconAsset(for: icon), fallback: icon, size: 24)
                 Text(destination.rawValue).font(.system(size: 14, weight: page == destination ? .bold : .medium))
                 Spacer()
             }
@@ -674,7 +745,7 @@ struct MainView: View {
     }
     private func summaryTile(_ title: String, _ detail: String, icon: String, color: Color = anTamOrange) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.title3).foregroundStyle(color).frame(width: 27)
+            brandIcon(customIconAsset(for: icon), fallback: icon, size: 32).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.caption).foregroundStyle(mutedInk)
                 Text(detail).font(.system(size: 14, weight: .bold)).lineLimit(2)
@@ -702,10 +773,13 @@ struct MainView: View {
                     inspection.checkMDM()
                 } label: {
                     Label("Kiểm tra lại", systemImage: "arrow.clockwise")
-                }.buttonStyle(.bordered)
+                }
                 Button { inspection.exportJSON(health: health.snapshot) } label: {
-                    Label("Xuất báo cáo", systemImage: "square.and.arrow.up")
-                }.buttonStyle(.bordered).foregroundStyle(anTamOrange)
+                    HStack(spacing: 6) {
+                        brandIcon("IconDownload", fallback: "square.and.arrow.up", size: 18)
+                        Text("Xuất báo cáo")
+                    }
+                }
             }
             overviewDeviceCard
             HStack(alignment: .top, spacing: 12) {
@@ -721,29 +795,31 @@ struct MainView: View {
 
     private var overviewDeviceCard: some View {
         card {
-            Label("Thông tin Mac", systemImage: "laptopcomputer")
-                .font(.system(size: 20, weight: .bold))
+            HStack(spacing: 8) {
+                brandIcon("IconLaptop", fallback: "laptopcomputer", size: 26)
+                Text("Thông tin Mac").font(.system(size: 20, weight: .bold))
+            }
             HStack(alignment: .center, spacing: 18) {
-                assetImage("MacBookPreview", width: 215, height: 145)
-                    .frame(width: 215)
-                Rectangle().fill(Color.gray.opacity(0.16)).frame(width: 1, height: 140)
+                assetImage("MacBookPhoto", width: 230, height: 130)
+                    .frame(width: 230)
+                Rectangle().fill(Color.gray.opacity(0.16)).frame(width: 1, height: 120)
                 VStack(alignment: .leading, spacing: 10) {
                     Text(macDisplayName)
                         .font(.system(size: 22, weight: .bold)).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 8) {
-                        Image(systemName: "laptopcomputer").foregroundStyle(mutedInk)
+                        brandIcon("IconApple", fallback: "apple.logo", size: 18)
                         Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        Image(systemName: "barcode").foregroundStyle(mutedInk)
+                        Image(systemName: "barcode").font(.system(size: 18)).foregroundStyle(mutedInk)
                         Text("S/N: \(inspection.hardware["Serial Number"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        Image(systemName: "cpu").foregroundStyle(mutedInk)
+                        brandIcon("IconChip", fallback: "cpu", size: 18)
                         Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        Image(systemName: "square.stack.3d.up").foregroundStyle(mutedInk)
+                        brandIcon("IconLayers", fallback: "square.stack.3d.up", size: 18)
                         Text(coreCountDescription)
                     }
                 }
@@ -770,20 +846,20 @@ struct MainView: View {
 
     private var overviewMDMCard: some View {
         card {
-            Label("MDM (Quản lý thiết bị)", systemImage: "gearshape.2.fill")
-                .font(.system(size: 20, weight: .bold))
+            HStack(spacing: 8) {
+                brandIcon("IconGear", fallback: "gearshape.2.fill", size: 26)
+                Text("MDM (Quản lý thiết bị)").font(.system(size: 20, weight: .bold))
+            }
             HStack {
                 HStack(spacing: 8) {
-                    Image(systemName: inspection.mdm.status == "Phát hiện quản lý" ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : Color.green)
+                    brandIcon(inspection.mdm.status == "Phát hiện quản lý" ? "IconFail" : "IconPass",
+                              fallback: inspection.mdm.status == "Phát hiện quản lý" ? "exclamationmark.triangle.fill" : "checkmark.circle.fill", size: 18)
                     Text(inspection.mdm.status).font(.system(size: 14, weight: .bold))
                         .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : ink)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 7)
                 .background((inspection.mdm.status == "Phát hiện quản lý" ? Color.red : inspection.mdm.status == "Chưa phát hiện quản lý hiện tại" ? Color.green : Color.orange).opacity(0.08), in: Capsule())
                 Spacer()
-                Button("Xem chi tiết →") { showMDMDetails = true }
-                    .buttonStyle(.bordered)
             }
             HStack(spacing: 8) {
                 Image(systemName: "person.badge.key").foregroundStyle(mutedInk)
@@ -799,8 +875,22 @@ struct MainView: View {
                 Text(inspection.mdm.automatedEnrollment).font(.caption.bold())
             }
             Divider().opacity(0.45)
-            Text("Kết quả này phản ánh trạng thái hiện tại của macOS. Nếu cần chắc chắn hơn, hãy kiểm tra hồ sơ quản lý và xác minh sau khi kích hoạt lại máy với sự đồng ý của chủ máy.")
-                .font(.system(size: 11)).foregroundStyle(mutedInk)
+            Text("Kiểm tra thêm cho yên tâm nhé!").font(.caption.bold())
+            VStack(alignment: .leading, spacing: 6) {
+                Text("1. Kiểm tra hồ sơ quản lý").font(.caption.bold())
+                Text("Mở Cài đặt hệ thống → Cài đặt chung → Quản lý thiết bị. Nếu có hồ sơ quản lý không rõ nguồn gốc, hãy hỏi người bán.")
+                    .font(.system(size: 11)).foregroundStyle(mutedInk)
+                Text("2. Kiểm tra sau khi xóa và kích hoạt lại máy").font(.caption.bold())
+                Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
+                    .font(.system(size: 11)).foregroundStyle(mutedInk)
+            }
+            if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
+                Text("Cả hai mục đều là Không — thiết bị của bạn có khoảng 80% là không có MDM, không phải 100%.")
+                    .font(.caption.bold()).foregroundStyle(anTamOrange)
+            } else {
+                Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
+                    .font(.caption.bold()).foregroundStyle(anTamOrange)
+            }
         }
     }
 
@@ -834,10 +924,12 @@ struct MainView: View {
     }
     private var overviewActivationCard: some View {
         card {
-            Label("Activation Lock", systemImage: "lock.shield")
-                .font(.system(size: 20, weight: .bold))
+            HStack(spacing: 8) {
+                brandIcon("IconLock", fallback: "lock.shield", size: 26)
+                Text("Activation Lock").font(.system(size: 20, weight: .bold))
+            }
             HStack {
-                Image(systemName: activationLockIcon)
+                brandIcon(customIconAsset(for: activationLockIcon), fallback: activationLockIcon, size: 18)
                     .foregroundStyle(activationLockColor)
                 Text(activationLockLabel)
                     .font(.system(size: 15, weight: .bold))
@@ -851,8 +943,10 @@ struct MainView: View {
 
     private var overviewTestListCard: some View {
         card {
-            Label("Danh sách bài kiểm tra (\(inspection.checks.count))", systemImage: "list.bullet")
-                .font(.system(size: 20, weight: .bold))
+            HStack(spacing: 8) {
+                brandIcon("IconList", fallback: "list.bullet", size: 26)
+                Text("Danh sách bài kiểm tra (\(inspection.checks.count))").font(.system(size: 20, weight: .bold))
+            }
             let names = inspection.checks
             let midpoint = (names.count + 1) / 2
             HStack(alignment: .top, spacing: 14) {
@@ -870,8 +964,9 @@ struct MainView: View {
                 let passed = result?.status == "Ổn"
                 let failed = result?.status == "Có lỗi"
                 HStack(spacing: 7) {
-                    Image(systemName: passed ? "checkmark.circle.fill" :
-                           failed ? "xmark.circle.fill" : "minus.circle.fill")
+                    brandIcon(passed ? "IconPass" : failed ? "IconFail" : "IconUntested",
+                              fallback: passed ? "checkmark.circle.fill" :
+                                        failed ? "xmark.circle.fill" : "minus.circle.fill", size: 18)
                         .foregroundStyle(passed ? Color.green : failed ? Color.red : Color.gray)
                     Text(name).font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
@@ -889,8 +984,10 @@ struct MainView: View {
 
     private var overviewSummaryCard: some View {
         card {
-            Label("Kết quả kiểm tra nhanh", systemImage: "checkmark.circle")
-                .font(.system(size: 20, weight: .bold))
+            HStack(spacing: 8) {
+                brandIcon("IconCheck", fallback: "checkmark.circle", size: 26)
+                Text("Kết quả kiểm tra nhanh").font(.system(size: 20, weight: .bold))
+            }
             HStack(alignment: .center, spacing: 22) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
@@ -914,7 +1011,7 @@ struct MainView: View {
                             .font(.system(size: 15, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 9)
                     }
-                    .buttonStyle(.borderedProminent).tint(anTamOrange)
+                    .buttonStyle(RaisedButtonStyle(prominent: true))
                 }.frame(maxWidth: .infinity)
             }
         }
@@ -922,7 +1019,7 @@ struct MainView: View {
 
     private func summaryNumber(_ count: String, _ label: String, _ symbol: String, _ color: Color) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: symbol).foregroundStyle(color)
+            brandIcon(customIconAsset(for: symbol), fallback: symbol, size: 20).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 1) {
                 Text(count).font(.system(size: 20, weight: .bold))
                 Text(label).font(.caption)
@@ -946,61 +1043,6 @@ struct MainView: View {
         case "Pin": return "battery.100percent"
         case "SSD": return "internaldrive"
         default: return "laptopcomputer"
-        }
-    }
-    private var mdmDetail: some View {
-        VStack(spacing: 16) {
-            mdmCard
-            card {
-                Label("Kiểm tra thêm cho yên tâm nhé! ✨", systemImage: "checklist")
-                    .font(.headline)
-                Text("1. Kiểm tra hồ sơ quản lý")
-                    .font(.subheadline.bold())
-                Text("Mở Cài đặt hệ thống → Cài đặt chung → Quản lý thiết bị. Nếu có hồ sơ quản lý không rõ nguồn gốc, hãy hỏi người bán.")
-                    .font(.caption).foregroundStyle(mutedInk)
-                Divider()
-                Text("2. Kiểm tra sau khi xóa và kích hoạt lại máy")
-                    .font(.subheadline.bold())
-                Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
-                    .font(.caption).foregroundStyle(mutedInk)
-                if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
-                    Text("Cả hai mục đều là Không — thiết bị của bạn có khoảng 80% là không có MDM, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
-                        .font(.caption.bold()).foregroundStyle(anTamOrange)
-                } else {
-                    Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
-                        .font(.caption.bold()).foregroundStyle(anTamOrange)
-                }
-            }
-        }
-    }
-
-    private var mdmCard: some View {
-        card {
-            HStack {
-                Label("Kiểm tra MDM trên Mac", systemImage: "lock.shield")
-                    .font(.headline)
-                Spacer()
-                Button(inspection.checkingMDM ? "Đang kiểm tra..." : "Kiểm tra MDM") {
-                    inspection.checkMDM()
-                }.disabled(inspection.checkingMDM)
-            }
-            HStack {
-                Image(systemName: "exclamationmark.shield").foregroundStyle(anTamOrange)
-                Text(inspection.mdm.status).font(.title3.bold())
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(warningBackground, in: RoundedRectangle(cornerRadius: 10))
-            Text("MDM enrollment: \(inspection.mdm.enrollment)").font(.caption)
-            Text("Automated Enrollment: \(inspection.mdm.automatedEnrollment)").font(.caption)
-            Text(inspection.mdm.warning).font(.caption).foregroundStyle(mutedInk)
-            if !inspection.mdm.details.isEmpty {
-                DisclosureGroup("Xem kết quả hệ thống") {
-                    Text(inspection.mdm.details)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                }
-            }
         }
     }
     private var shopCard: some View {
@@ -1062,10 +1104,11 @@ struct MainView: View {
                         Image(systemName: symbolForTest(name)).foregroundStyle(ink)
                             .frame(width: 31, height: 31)
                             .background(.white.opacity(0.57), in: RoundedRectangle(cornerRadius: 8))
-                        Text(name).font(.caption.bold())
+                        Text(name).font(.system(size: 14, weight: .semibold))
                         Spacer()
                         let result = inspection.results.first(where: { $0.name == name })
-                        Image(systemName: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "circle")
+                        brandIcon(result?.status == "Ổn" ? "IconPass" : result?.status == "Có lỗi" ? "IconFail" : "IconUntested",
+                                  fallback: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "minus.circle.fill", size: 18)
                             .foregroundStyle(result?.status == "Ổn" ? Color.green : result?.status == "Có lỗi" ? Color.red : Color.gray)
                     }.padding(10).background(testColor(name), in: RoundedRectangle(cornerRadius: 8))
                 }
@@ -1074,7 +1117,7 @@ struct MainView: View {
             if inspection.running && inspection.step < inspection.checks.count {
                 let current = inspection.checks[inspection.step]
                 Text("Bước \(inspection.step + 1)/\(inspection.checks.count)")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.system(size: 13)).foregroundStyle(.secondary)
                 Text(current).font(.title.bold()).foregroundStyle(anTamOrange)
                 if current == "Pin" {
                     let b = health.snapshot.battery
@@ -1091,14 +1134,14 @@ struct MainView: View {
                     }
                     Button("Đọc lại SSD") { health.refresh() }
                     Text("SMART không khả dụng không đồng nghĩa ổ bị lỗi. Chưa bao gồm benchmark.")
-                        .font(.caption).foregroundStyle(mutedInk)
+                        .font(.system(size: 13)).foregroundStyle(mutedInk)
                 } else {
                     DiagnosticToolView(name: current, tools: tools)
                 }
                 Text(tools.canConfirm(current)
                      ? "Hãy tự quan sát kết quả rồi xác nhận."
                      : "Hãy thực hiện bài test trước khi xác nhận Đạt. Có thể chọn Có lỗi hoặc Chưa thử bất cứ lúc nào.")
-                    .font(.caption).foregroundStyle(mutedInk)
+                    .font(.system(size: 13)).foregroundStyle(mutedInk)
                 HStack {
                     Button("Ổn rồi!") {
                         inspection.record("Ổn")
@@ -1117,7 +1160,7 @@ struct MainView: View {
                         tools.stopRecording()
                         tools.stopCamera()
                         inspection.stop()
-                    }
+                    }.buttonStyle(RaisedButtonStyle(tint: .red))
                 }
             } else {
                 Text(inspection.results.count == inspection.checks.count ? "Phiên kiểm tra đã hoàn tất. Xem kết luận trong Báo cáo." : "Phiên kiểm tra đang dừng. Mở Báo cáo để xem kết quả đã ghi nhận.")
@@ -1216,12 +1259,8 @@ struct MainView: View {
 
 @main
 struct AnTamMacCheckApp: App {
-    private static var displayName: String {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        return v.isEmpty ? "An Tâm Mac check" : "An Tâm Mac check v\(v)"
-    }
     var body: some Scene {
-        WindowGroup(LocalizedStringKey(Self.displayName)) { MainView() }
+        WindowGroup("An Tâm \u{F8FF} Check v1.2") { MainView() }
             .defaultSize(width: 1480, height: 960)
     }
 }
