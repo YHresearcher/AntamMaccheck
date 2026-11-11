@@ -31,7 +31,7 @@ jobs:
           assert '.foregroundStyle(ink)' in app, "Main UI must explicitly set dark foreground"
           assert '.foregroundStyle(ink)\n            .background(Color.white' in app, "Cards need dark-on-white text"
           assert 'private var aboutPopup' in app and 'private var report:' in app
-          assert 'HardwareHealthView(model: health)' in app
+          assert 'private var overview:' in app and 'private var testWizard:' in app
           assert 'GroupBox("Battery Analyzer")' in health
           assert 'pressed.contains(key.0)' in keyboard
           def luminance(rgb):
