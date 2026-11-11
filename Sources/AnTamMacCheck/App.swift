@@ -1007,7 +1007,6 @@ struct MainView: View {
             card {
                 Label("An Tâm nhắn bạn", systemImage: "heart.fill").font(.title3.bold())
                 HStack(alignment: .top, spacing: 14) {
-                    assetImage(inspection.reassuranceMascot(for: health.snapshot), width: 115, height: 115)
                     VStack(alignment: .leading, spacing: 8) {
                         if let note = inspection.reassuranceNote(for: health.snapshot) {
                             Text(note).fixedSize(horizontal: false, vertical: true)
