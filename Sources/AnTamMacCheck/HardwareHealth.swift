@@ -12,6 +12,7 @@ struct BatterySnapshot {
     var designMAh: Int?
     var maxMAh: Int?
     var chargePercent: Int?
+    var isCharging: Bool?
     var condition: String?
     var healthPercent: Double? {
         guard let maxMAh, let designMAh, maxMAh > 0, designMAh > 0 else { return nil }
@@ -75,6 +76,8 @@ enum NativeHealthProbe {
         battery.maxMAh = int("AppleRawMaxCapacity", in: output)
             ?? int("NominalChargeCapacity", in: output)
         battery.chargePercent = int("CurrentCapacity", in: output)
+        if output.contains("\"IsCharging\" = Yes") { battery.isCharging = true }
+        else if output.contains("\"IsCharging\" = No") { battery.isCharging = false }
         return battery
     }
     private static func field(_ data: [String: Any], _ keys: [String]) -> String? {
