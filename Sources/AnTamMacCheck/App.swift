@@ -267,6 +267,7 @@ struct Result: Identifiable, Codable {
             ("macOS", "/usr/bin/sw_vers", ["-productVersion"])
         ]
         var values: [String: String] = [:]
+        var modelIdentifier = "Không khả dụng"
         for (name, path, args) in queries {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: path)
@@ -280,6 +281,7 @@ struct Result: Identifiable, Codable {
                 p.waitUntilExit()
                 let value = p.terminationStatus == 0 ? (String(data: output, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines) : ""
                 values[name] = value.isEmpty ? "Không khả dụng" : value
+                if name == "Model" { modelIdentifier = values[name] ?? "Không khả dụng" }
             } catch { values[name] = "Không khả dụng" }
         }
         // Trên Apple Silicon, machdep.cpu.brand_string thường không tồn tại.
@@ -308,6 +310,7 @@ struct Result: Identifiable, Codable {
                 }
             } catch { /* Giữ trạng thái Không khả dụng thay vì bịa CPU. */ }
         }
+        values["Model Identifier"] = values["Model Identifier"] ?? modelIdentifier
         hardware = values
         info = "Đã đọc cấu hình cơ bản rồi nè! Đây chưa phải kết quả kiểm tra sức khỏe nha."
     }
@@ -634,9 +637,16 @@ struct MainView: View {
         return "\(Int((bytes / 1_073_741_824).rounded())) GB"
     }
     private var macDisplayName: String {
-        let raw = inspection.hardware["Model"] ?? "Đang nhận diện Mac"
-        if raw.hasPrefix("Mac") && raw.contains(",") { return "Máy Mac (\(raw))" }
-        return raw
+        let model = inspection.hardware["Model"] ?? "Đang nhận diện Mac"
+        let identifier = inspection.hardware["Model Identifier"] ?? ""
+        let chip = inspection.hardware["Chip / CPU"] ?? ""
+        switch identifier {
+        case "Mac14,9": return "MacBook Pro 14\" (2023) · \(chip)"
+        case "Mac14,10": return "MacBook Pro 16\" (2023) · \(chip)"
+        case "Mac14,5": return "MacBook Pro 14\" (2023) · \(chip)"
+        case "Mac14,6": return "MacBook Pro 16\" (2023) · \(chip)"
+        default: return model
+        }
     }
     private func summaryTile(_ title: String, _ detail: String, icon: String, color: Color = anTamOrange) -> some View {
         HStack(spacing: 12) {
@@ -673,7 +683,7 @@ struct MainView: View {
                     assetImage("MacBookPreview", width: 250, height: 170)
                     VStack(alignment: .leading, spacing: 7) {
                         Text(macDisplayName).font(.system(size: 21, weight: .bold))
-                        Text("Model: \(inspection.hardware["Model"] ?? "Chưa đọc")").font(.caption).foregroundStyle(mutedInk)
+                        Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")").font(.caption).foregroundStyle(mutedInk)
                         Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")").font(.subheadline)
                         Text("Số nhân CPU: \(inspection.hardware["CPU logic"] ?? "Chưa đọc")").font(.subheadline)
                     }.frame(maxWidth: .infinity, alignment: .leading)
