@@ -534,7 +534,7 @@ struct MainView: View {
                     navButton(.report, "chart.bar.fill")
                     Button { showAbout = true } label: {
                         HStack(spacing: 13) {
-                            brandIcon("IconInfo", fallback: "info.circle", size: 24)
+                            brandIcon("IconInfo", fallback: "info.circle", size: 30)
                             Text("Giới thiệu").font(.system(size: 14, weight: .medium))
                             Spacer()
                         }
@@ -713,7 +713,7 @@ struct MainView: View {
     private func navButton(_ destination: Page, _ icon: String) -> some View {
         Button { page = destination } label: {
             HStack(spacing: 13) {
-                brandIcon(customIconAsset(for: icon), fallback: icon, size: 24)
+                brandIcon(customIconAsset(for: icon), fallback: icon, size: 30)
                 Text(destination.rawValue).font(.system(size: 14, weight: page == destination ? .bold : .medium))
                 Spacer()
             }
@@ -791,7 +791,7 @@ struct MainView: View {
     }
     private func summaryTile(_ title: String, _ detail: String, icon: String, color: Color = anTamOrange) -> some View {
         HStack(spacing: 12) {
-            brandIcon(customIconAsset(for: icon), fallback: icon, size: 32).foregroundStyle(color)
+            brandIcon(customIconAsset(for: icon), fallback: icon, size: 44).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.caption).foregroundStyle(mutedInk)
                 Text(detail).font(.system(size: 14, weight: .bold)).lineLimit(2)
@@ -819,13 +819,13 @@ struct MainView: View {
                     inspection.checkMDM()
                 } label: {
                     HStack(spacing: 6) {
-                        brandIcon("IconRefresh", fallback: "arrow.clockwise", size: 18)
+                        brandIcon("IconRefresh", fallback: "arrow.clockwise", size: 22)
                         Text("Kiểm tra lại")
                     }
                 }
                 Button { inspection.exportJSON(health: health.snapshot) } label: {
                     HStack(spacing: 6) {
-                        brandIcon("IconDownload", fallback: "square.and.arrow.up", size: 18)
+                        brandIcon("IconDownload", fallback: "square.and.arrow.up", size: 22)
                         Text("Xuất báo cáo")
                     }
                 }
@@ -845,7 +845,7 @@ struct MainView: View {
     private var overviewDeviceCard: some View {
         card {
             HStack(spacing: 8) {
-                brandIcon("IconLaptop", fallback: "laptopcomputer", size: 26)
+                brandIcon("IconLaptop", fallback: "laptopcomputer", size: 34)
                 Text("Thông tin Mac").font(.system(size: 20, weight: .bold))
             }
             HStack(alignment: .center, spacing: 18) {
@@ -856,19 +856,19 @@ struct MainView: View {
                     Text(macDisplayName)
                         .font(.system(size: 22, weight: .bold)).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 8) {
-                        brandIcon("IconApple", fallback: "apple.logo", size: 18)
+                        brandIcon("IconApple", fallback: "apple.logo", size: 22)
                         Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        Image(systemName: "barcode").font(.system(size: 18)).foregroundStyle(mutedInk)
+                        Image(systemName: "barcode").font(.system(size: 22)).foregroundStyle(mutedInk)
                         Text("S/N: \(inspection.hardware["Serial Number"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        brandIcon("IconChip", fallback: "cpu", size: 18)
+                        brandIcon("IconChip", fallback: "cpu", size: 22)
                         Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
-                        brandIcon("IconLayers", fallback: "square.stack.3d.up", size: 18)
+                        brandIcon("IconLayers", fallback: "square.stack.3d.up", size: 22)
                         Text(coreCountDescription)
                     }
                 }
@@ -896,13 +896,13 @@ struct MainView: View {
     private var overviewMDMCard: some View {
         card {
             HStack(spacing: 8) {
-                brandIcon("IconGear", fallback: "gearshape.2.fill", size: 26)
+                brandIcon("IconGear", fallback: "gearshape.2.fill", size: 34)
                 Text("MDM (Quản lý thiết bị)").font(.system(size: 20, weight: .bold))
             }
             HStack {
                 HStack(spacing: 8) {
                     brandIcon(inspection.mdm.status == "Phát hiện quản lý" ? "IconFail" : "IconPass",
-                              fallback: inspection.mdm.status == "Phát hiện quản lý" ? "exclamationmark.triangle.fill" : "checkmark.circle.fill", size: 18)
+                              fallback: inspection.mdm.status == "Phát hiện quản lý" ? "exclamationmark.triangle.fill" : "checkmark.circle.fill", size: 24)
                     Text(inspection.mdm.status).font(.system(size: 14, weight: .bold))
                         .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : ink)
                 }
@@ -974,11 +974,11 @@ struct MainView: View {
     private var overviewActivationCard: some View {
         card {
             HStack(spacing: 8) {
-                brandIcon("IconLock", fallback: "lock.shield", size: 26)
+                brandIcon("IconLock", fallback: "lock.shield", size: 34)
                 Text("Activation Lock").font(.system(size: 20, weight: .bold))
             }
             HStack {
-                brandIcon(customIconAsset(for: activationLockIcon), fallback: activationLockIcon, size: 18)
+                brandIcon(customIconAsset(for: activationLockIcon), fallback: activationLockIcon, size: 24)
                     .foregroundStyle(activationLockColor)
                 Text(activationLockLabel)
                     .font(.system(size: 15, weight: .bold))
@@ -993,7 +993,7 @@ struct MainView: View {
     private var overviewTestListCard: some View {
         card {
             HStack(spacing: 8) {
-                brandIcon("IconList", fallback: "list.bullet", size: 26)
+                brandIcon("IconList", fallback: "list.bullet", size: 34)
                 Text("Danh sách bài kiểm tra (\(inspection.checks.count))").font(.system(size: 20, weight: .bold))
             }
             let names = inspection.checks
@@ -1015,7 +1015,7 @@ struct MainView: View {
                 HStack(spacing: 7) {
                     brandIcon(passed ? "IconPass" : failed ? "IconFail" : "IconUntested",
                               fallback: passed ? "checkmark.circle.fill" :
-                                        failed ? "xmark.circle.fill" : "minus.circle.fill", size: 18)
+                                        failed ? "xmark.circle.fill" : "minus.circle.fill", size: 24)
                         .foregroundStyle(passed ? Color.green : failed ? Color.red : Color.gray)
                     Text(name).font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
@@ -1034,7 +1034,7 @@ struct MainView: View {
     private var overviewSummaryCard: some View {
         card {
             HStack(spacing: 8) {
-                brandIcon("IconCheck", fallback: "checkmark.circle", size: 26)
+                brandIcon("IconCheck", fallback: "checkmark.circle", size: 34)
                 Text("Kết quả kiểm tra nhanh").font(.system(size: 20, weight: .bold))
             }
             HStack(alignment: .center, spacing: 22) {
@@ -1058,7 +1058,7 @@ struct MainView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Text("Tiếp tục kiểm tra chi tiết")
-                            brandIcon("IconArrow", fallback: "arrow.right", size: 18)
+                            brandIcon("IconArrow", fallback: "arrow.right", size: 22)
                         }
                             .font(.system(size: 15, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 9)
@@ -1071,7 +1071,7 @@ struct MainView: View {
 
     private func summaryNumber(_ count: String, _ label: String, _ symbol: String, _ color: Color) -> some View {
         HStack(spacing: 6) {
-            brandIcon(customIconAsset(for: symbol), fallback: symbol, size: 20).foregroundStyle(color)
+            brandIcon(customIconAsset(for: symbol), fallback: symbol, size: 26).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 1) {
                 Text(count).font(.system(size: 20, weight: .bold))
                 Text(label).font(.caption)
@@ -1160,7 +1160,7 @@ struct MainView: View {
                         Spacer()
                         let result = inspection.results.first(where: { $0.name == name })
                         brandIcon(result?.status == "Ổn" ? "IconPass" : result?.status == "Có lỗi" ? "IconFail" : "IconUntested",
-                                  fallback: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "minus.circle.fill", size: 18)
+                                  fallback: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "minus.circle.fill", size: 24)
                             .foregroundStyle(result?.status == "Ổn" ? Color.green : result?.status == "Có lỗi" ? Color.red : Color.gray)
                     }.padding(10).background(testColor(name), in: RoundedRectangle(cornerRadius: 8))
                 }
