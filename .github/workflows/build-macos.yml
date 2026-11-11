@@ -76,9 +76,7 @@ jobs:
           git clone --depth 1 https://github.com/YHresearcher/PCcheck.git /tmp/antam-pccheck-assets
           SRC="/tmp/antam-pccheck-assets/验机软件/Assets"
           test -s "$SRC/mascot-checklist-2026.png"
-          test -s "$SRC/mascot-thinking-2026.png"
           cp "$SRC/mascot-checklist-2026.png" resources/MascotChecklist.png
-          cp "$SRC/mascot-thinking-2026.png" resources/MascotThinking.png
       - name: Generate original stereo speaker-test WAV
         shell: bash
         run: |
@@ -134,7 +132,7 @@ jobs:
           if [ -f "resources/AnTamLogo.png" ]; then
             cp "resources/AnTamLogo.png" "$APP/Contents/Resources/AnTamLogo.png"
           fi
-          for asset in MascotChecklist MascotThinking MacBookPreview; do
+          for asset in MascotChecklist MacBookPreview; do
             cp "resources/$asset.png" "$APP/Contents/Resources/$asset.png"
           done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
