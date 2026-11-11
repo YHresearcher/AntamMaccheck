@@ -258,6 +258,46 @@ struct Result: Identifiable, Codable {
         }
     }
 
+    /// Tên thương mại của macOS theo số phiên bản (vd 26.0 -> "macOS Tahoe 26.0").
+    /// Phiên bản chưa biết thì chỉ hiện số, không đoán tên.
+    private func macOSDisplayName(for version: String) -> String {
+        guard version != "Không khả dụng" else { return version }
+        let parts = version.split(separator: ".").compactMap { Int($0) }
+        guard let major = parts.first else { return "macOS \(version)" }
+        let name: String?
+        switch major {
+        case 26: name = "Tahoe"
+        case 15: name = "Sequoia"
+        case 14: name = "Sonoma"
+        case 13: name = "Ventura"
+        case 12: name = "Monterey"
+        case 11: name = "Big Sur"
+        case 10:
+            switch parts.dropFirst().first {
+            case 15: name = "Catalina"
+            case 14: name = "Mojave"
+            case 13: name = "High Sierra"
+            case 12: name = "Sierra"
+            case 11: name = "El Capitan"
+            case 10: name = "Yosemite"
+            case 9: name = "Mavericks"
+            case 8: name = "Mountain Lion"
+            case 7: name = "Lion"
+            case 6: name = "Snow Leopard"
+            case 5: name = "Leopard"
+            case 4: name = "Tiger"
+            case 3: name = "Panther"
+            case 2: name = "Jaguar"
+            case 1: name = "Puma"
+            case 0: name = "Cheetah"
+            default: name = nil
+            }
+        default: name = nil
+        }
+        if let name { return "macOS \(name) \(version)" }
+        return "macOS \(version)"
+    }
+
     func readHardware() {
         let queries: [(String, String, [String])] = [
             ("Model", "/usr/sbin/sysctl", ["-n", "hw.model"]),
@@ -341,6 +381,9 @@ struct Result: Identifiable, Codable {
                 }
             }
         } catch { /* Không đọc được GPU thì chỉ hiện số nhân CPU. */ }
+        if let version = values["macOS"] {
+            values["macOS"] = macOSDisplayName(for: version)
+        }
         values["Model Identifier"] = values["Model Identifier"] ?? modelIdentifier
         hardware = values
         info = "Đã đọc cấu hình cơ bản rồi nè! Đây chưa phải kết quả kiểm tra sức khỏe nha."
@@ -660,6 +703,9 @@ struct MainView: View {
         case "exclamationmark.circle.fill": return "IconFail"
         case "exclamationmark.triangle.fill": return "IconFail"
         case "lock.fill": return "IconLock"
+        case "arrow.clockwise": return "IconRefresh"
+        case "arrow.right": return "IconArrow"
+        case "questionmark.circle.fill": return "IconHelp"
         default: return nil
         }
     }
@@ -772,7 +818,10 @@ struct MainView: View {
                     health.refresh()
                     inspection.checkMDM()
                 } label: {
-                    Label("Kiểm tra lại", systemImage: "arrow.clockwise")
+                    HStack(spacing: 6) {
+                        brandIcon("IconRefresh", fallback: "arrow.clockwise", size: 18)
+                        Text("Kiểm tra lại")
+                    }
                 }
                 Button { inspection.exportJSON(health: health.snapshot) } label: {
                     HStack(spacing: 6) {
@@ -1007,7 +1056,10 @@ struct MainView: View {
                         if !inspection.running && inspection.step < inspection.checks.count { inspection.resume() }
                         page = .inspection
                     } label: {
-                        Label("Tiếp tục kiểm tra chi tiết", systemImage: "arrow.right")
+                        HStack(spacing: 8) {
+                            Text("Tiếp tục kiểm tra chi tiết")
+                            brandIcon("IconArrow", fallback: "arrow.right", size: 18)
+                        }
                             .font(.system(size: 15, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 9)
                     }
