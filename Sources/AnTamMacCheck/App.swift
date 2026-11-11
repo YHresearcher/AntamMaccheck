@@ -42,7 +42,7 @@ struct Result: Identifiable, Codable {
     @Published var step = 0
     @Published var errorNote = ""
     @Published var info = "Bán bằng tâm để bạn an tâm"
-    let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan"]
+    let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan", "Pin", "SSD"]
 
     /// Mức kết luận tổng hợp từ TẤT CẢ các tab (chức năng + pin + ổ +
     /// MDM + Activation Lock), theo thứ tự ưu tiên như PCcheck
@@ -138,14 +138,14 @@ struct Result: Identifiable, Codable {
             }
             return "Chưa đủ dữ liệu để kết luận. Còn \(unknown.count) hạng mục chưa xác nhận: \(unknown.joined(separator: ", "))."
         case .caution:
-            var text = "8/8 bài kiểm tra chức năng đều ổn. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
+            var text = "(checks.count)/(checks.count) bài kiểm tra đã xác nhận đạt. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
             if mdm.enrollment == "Không" && mdm.automatedEnrollment == "Không" {
-                text += " MDM cả hai mục đều Không — thiết bị của bạn có khoảng 80% là không có MDM."
+                text += " MDM cả hai mục đều Không — không phát hiện quản lý MDM hiện tại."
             }
             if health?.activationLock == "Đã tắt" { text += " Activation Lock đã tắt." }
             return text
         case .good:
-            var text = "8/8 bài kiểm tra chức năng đều ổn"
+            var text = "(checks.count)/(checks.count) bài kiểm tra đã xác nhận đạt"
             if let pct = health?.battery.healthPercent {
                 text += String(format: "; pin còn %.1f%%", pct)
             }
@@ -153,7 +153,7 @@ struct Result: Identifiable, Codable {
                !verified.isEmpty {
                 text += "; ổ \(verified.joined(separator: ", ")) SMART Verified"
             }
-            text += "; MDM cả hai mục đều Không (thiết bị của bạn có khoảng 80% là không có MDM); Activation Lock đã tắt."
+            text += "; MDM cả hai mục đều Không (không phát hiện quản lý MDM hiện tại); Activation Lock đã tắt."
             text += " Chưa test tải CPU/GPU, và chưa xóa máy kiểm tra lại — hai bước này vẫn nên làm khi cần chắc chắn hơn, nhưng không bắt buộc."
             return text
         }
@@ -236,7 +236,7 @@ struct Result: Identifiable, Codable {
             // là lựa chọn thêm để chắc chắn hơn, không bắt buộc.
             let warning: String
             if enrollment == "Không" && automated == "Không" {
-                warning = "MDM enrollment và Automated Enrollment đều là Không — thiết bị của bạn có khoảng 80% là không bị quản lý MDM. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị; xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc."
+                warning = "MDM enrollment và Automated Enrollment đều là Không — không phát hiện quản lý MDM hiện tại. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị; xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc."
             } else {
                 warning = MDMCheck().warning
             }
@@ -395,15 +395,12 @@ struct Result: Identifiable, Codable {
 }
 
 enum Page: String, CaseIterable, Identifiable {
-    case overview = "Tổng quan", hardware = "Thông tin Mac", inspection = "Kiểm tra chi tiết", health = "Sức khỏe phần cứng", mdm = "MDM & Quản lý", report = "Báo cáo"
+    case overview = "Tổng quan", inspection = "Kiểm tra chi tiết", report = "Báo cáo"
     var id: String { rawValue }
     var symbol: String {
         switch self {
         case .overview: return "square.grid.2x2"
-        case .hardware: return "cpu"
         case .inspection: return "checkmark.shield"
-        case .health: return "battery.100percent"
-        case .mdm: return "lock.shield"
         case .report: return "doc.text"
         }
     }
@@ -421,32 +418,31 @@ struct MainView: View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
-                    assetImage("MascotChecklist", width: 90, height: 88)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("An Tâm").font(.system(size: 20, weight: .bold))
-                        Text("Mac check").font(.system(size: 19, weight: .bold))
+                    assetImage("AnTamLogo", width: 55, height: 55)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("An Tâm Mac check").font(.system(size: 17, weight: .bold))
+                        Text("Bán bằng tâm để bạn an tâm")
+                            .font(.system(size: 10)).foregroundStyle(mutedInk)
                     }
-                }
-                .padding(.horizontal, 12).padding(.top, 16)
-                VStack(spacing: 7) {
+                }.padding(.horizontal, 12).padding(.top, 18)
+                VStack(spacing: 8) {
                     navButton(.overview, "house.fill")
-                    navButton(.inspection, "laptopcomputer")
-                    navButton(.hardware, "cpu")
-                    navButton(.health, "battery.100percent")
-                    navButton(.mdm, "lock.shield")
-                    navButton(.report, "chart.bar")
-                    Divider().padding(.vertical, 10)
+                    navButton(.inspection, "checklist")
+                    navButton(.report, "chart.bar.fill")
                     Button { showAbout = true } label: {
                         Label("Giới thiệu", systemImage: "info.circle")
                             .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                     }.buttonStyle(.plain)
                 }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
-                Text("Bán bằng tâm để bạn an tâm")
-                    .font(.caption).foregroundStyle(mutedInk).padding(.horizontal, 18)
+                assetImage("MascotChecklist", width: 215, height: 260)
+                    .frame(maxWidth: .infinity)
+                Link(destination: Shop.website) {
+                    Label("vitinhantam.com", systemImage: "globe")
+                        .font(.caption).foregroundStyle(mutedInk)
+                }.padding(.horizontal, 20).padding(.bottom, 16)
             }
             .frame(minWidth: 235, maxWidth: 245, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.bottom, 15)
             .foregroundStyle(ink)
             .background(Color(red: 1.0, green: 0.97, blue: 0.935))
         } detail: {
@@ -464,10 +460,7 @@ struct MainView: View {
                     }
                     switch page {
                     case .overview: overview
-                    case .hardware: hardware
-                    case .health: HardwareHealthView(model: health)
                     case .inspection: testWizard
-                    case .mdm: mdmDetail
                     case .report: report
                     }
                     Spacer(minLength: 10)
@@ -568,9 +561,9 @@ struct MainView: View {
                 Text(destination.rawValue).font(.system(size: 14, weight: page == destination ? .bold : .medium))
                 Spacer()
             }
-            .foregroundStyle(page == destination ? Color.white : ink)
+            .foregroundStyle(page == destination ? anTamOrange : ink)
             .padding(.horizontal, 13).padding(.vertical, 12)
-            .background(page == destination ? anTamOrange : Color.white.opacity(0.56),
+            .background(page == destination ? anTamOrange.opacity(0.13) : Color.white.opacity(0.56),
                         in: RoundedRectangle(cornerRadius: 12))
         }.buttonStyle(.plain)
     }
@@ -632,142 +625,120 @@ struct MainView: View {
         .background(testColor(name), in: RoundedRectangle(cornerRadius: 11))
     }
 
+
+    private var passCount: Int { inspection.results.filter { $0.status == "Ổn" }.count }
+    private var failCount: Int { inspection.results.filter { $0.status == "Có lỗi" }.count }
+    private var remainingCount: Int { inspection.checks.count - passCount - failCount }
+    private var ramDescription: String {
+        guard let raw = inspection.hardware["RAM (bytes)"], let bytes = Double(raw) else { return "Chưa đọc" }
+        return "\(Int((bytes / 1_073_741_824).rounded())) GB"
+    }
+    private var macDisplayName: String {
+        let raw = inspection.hardware["Model"] ?? "Đang nhận diện Mac"
+        if raw.hasPrefix("Mac") && raw.contains(",") { return "Máy Mac (\(raw))" }
+        return raw
+    }
+    private func summaryTile(_ title: String, _ detail: String, icon: String, color: Color = anTamOrange) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.title3).foregroundStyle(color).frame(width: 27)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.caption).foregroundStyle(mutedInk)
+                Text(detail).font(.system(size: 14, weight: .bold)).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }.padding(12)
+         .frame(maxWidth: .infinity, alignment: .leading)
+         .background(backgroundColor, in: RoundedRectangle(cornerRadius: 12))
+    }
     private var overview: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Xin chào! 👋").font(.system(size: 29, weight: .bold))
-                    Text("Bán bằng tâm để bạn an tâm")
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Tổng quan thiết bị").font(.system(size: 29, weight: .bold))
+                    Text("Thông tin Mac, trạng thái bảo mật và tiến độ các bài kiểm tra.")
                         .font(.subheadline).foregroundStyle(mutedInk)
                 }
                 Spacer()
-                Button("↻  Kiểm tra lại") {
-                    tools.reset()
-                    inspection.start()
-                    page = .inspection
-                }.disabled(inspection.running)
-            }
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 15) {
-                    overviewLeft.frame(minWidth: 350, maxWidth: .infinity)
-                    overviewRight.frame(minWidth: 350, maxWidth: .infinity)
+                Button("Kiểm tra lại") {
+                    inspection.readHardware()
+                    health.refresh()
+                    inspection.checkMDM()
                 }
-                VStack(spacing: 15) {
-                    overviewLeft
-                    overviewRight
-                }
-            }
-        }
-    }
-
-    private var overviewLeft: some View {
-        VStack(spacing: 15) {
-            card {
-                HStack(alignment: .center, spacing: 14) {
-                    assetImage("MacBookPreview", width: 170, height: 146)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(inspection.hardware["Model"] ?? "Mac đang kiểm tra")
-                            .font(.system(size: 19, weight: .bold)).lineLimit(2)
-                        Text("Thông số thiết bị").font(.caption).foregroundStyle(mutedInk)
-                        Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")").lineLimit(2)
-                        Text("RAM: \(ramDescription)").lineLimit(1)
-                        Text("macOS: \(inspection.hardware["macOS"] ?? "Chưa đọc")").lineLimit(1)
-                        Button("Xem cấu hình chi tiết →") { page = .hardware }
-                    }.font(.system(size: 12))
-                }
+                Button("Xuất báo cáo") { inspection.exportJSON(health: health.snapshot) }
             }
             card {
-                HStack {
-                    Label("Kết quả kiểm tra nhanh", systemImage: "questionmark.circle.fill")
-                        .font(.system(size: 19, weight: .bold))
-                    Spacer()
-                    Text("\(inspection.results.filter { $0.status != "Chưa thử" }.count)/\(inspection.checks.count) mục đã thử")
-                        .font(.caption.bold()).foregroundStyle(anTamOrange)
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(warningBackground, in: Capsule())
-                }
-                ForEach(["Màn hình", "Loa", "Webcam", "Bàn phím", "Trackpad", "Microphone", "Cổng kết nối", "Ngoại quan"], id: \.self) { name in
-                    colorfulTestRow(name)
+                Label("Thông tin Mac", systemImage: "laptopcomputer")
+                    .font(.title3.bold()).foregroundStyle(ink)
+                HStack(alignment: .center, spacing: 20) {
+                    assetImage("MacBookPreview", width: 250, height: 170)
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text(macDisplayName).font(.system(size: 21, weight: .bold))
+                        Text("Model: \(inspection.hardware["Model"] ?? "Chưa đọc")").font(.caption).foregroundStyle(mutedInk)
+                        Text("CPU: \(inspection.hardware["Chip / CPU"] ?? "Chưa đọc")").font(.subheadline)
+                        Text("Số nhân CPU: \(inspection.hardware["CPU logic"] ?? "Chưa đọc")").font(.subheadline)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(spacing: 10) {
+                        HStack(spacing: 10) {
+                            summaryTile("RAM", ramDescription, icon: "memorychip")
+                            summaryTile("SSD", health.snapshot.storage.first?.capacity ?? "Chưa đọc", icon: "internaldrive")
+                        }
+                        HStack(spacing: 10) {
+                            let battery = health.snapshot.battery
+                            summaryTile("Pin", battery.healthPercent.map { String(format: "%.0f%% sức khỏe", $0) } ?? "Chưa xác định", icon: "battery.100percent", color: .green)
+                            summaryTile("Mức pin", battery.chargePercent.map { "\($0)%" } ?? "Chưa đọc", icon: "bolt")
+                        }
+                        summaryTile("macOS", inspection.hardware["macOS"] ?? "Chưa đọc", icon: "apple.logo")
+                    }.frame(maxWidth: 480)
                 }
             }
-            card {
-                HStack {
-                    Label("Sức khỏe phần cứng", systemImage: "battery.100percent")
+            HStack(alignment: .top, spacing: 16) {
+                card {
+                    HStack {
+                        Label("MDM (Quản lý thiết bị)", systemImage: "gearshape.2")
+                            .font(.headline)
+                        Spacer()
+                        Button(inspection.checkingMDM ? "Đang kiểm tra" : "Kiểm tra lại") {
+                            inspection.checkMDM()
+                        }.disabled(inspection.checkingMDM)
+                    }
+                    Text(inspection.mdm.status)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : Color.green)
+                    Text("MDM enrollment: \(inspection.mdm.enrollment)").font(.caption)
+                    Text("Automated enrollment: \(inspection.mdm.automatedEnrollment)").font(.caption)
+                    Text("Chỉ phản ánh trạng thái hiện tại của macOS, không xác nhận đăng ký tổ chức sau khi kích hoạt lại.")
+                        .font(.caption).foregroundStyle(mutedInk)
+                }
+                card {
+                    Label("Activation Lock", systemImage: "lock.shield")
                         .font(.headline)
-                    Spacer()
-                    Button("Xem chi tiết →") { page = .health }
+                    Text(health.snapshot.activationLock)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(health.snapshot.activationLock == "Đã bật" ? Color.red : Color.green)
+                    Text("Đọc từ trạng thái mà macOS cung cấp.")
+                        .font(.caption).foregroundStyle(mutedInk)
                 }
-                let b = health.snapshot.battery
-                HStack {
-                    Text("Pin").fontWeight(.medium)
-                    Spacer()
-                    Text(b.healthPercent.map { String(format: "%.1f%% (ước tính)", $0) }
-                         ?? (b.present ? "Chưa đủ dữ liệu" : "Không khả dụng"))
-                        .foregroundStyle(mutedInk)
-                }.font(.caption)
-                HStack {
-                    Text("Ổ lưu trữ").fontWeight(.medium)
-                    Spacer()
-                    Text(health.snapshot.storage.isEmpty
-                         ? "Chưa đọc được thông tin"
-                         : "\(health.snapshot.storage.count) mục nhận diện")
-                        .foregroundStyle(mutedInk)
-                }.font(.caption)
-                Text("Không có dữ liệu không có nghĩa thiết bị hỏng.")
-                    .font(.caption2).foregroundStyle(mutedInk)
             }
-            HStack(spacing: 12) {
-                Button {
-                    if !inspection.running { tools.reset(); inspection.start() }
-                    page = .inspection
-                } label: {
-                    Label("Kiểm tra chi tiết", systemImage: "play.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(maxWidth: .infinity).padding(13)
-                        .foregroundStyle(.white)
-                        .background(anTamOrange, in: RoundedRectangle(cornerRadius: 12))
-                }.buttonStyle(.plain)
-                Button { inspection.exportJSON(health: health.snapshot) } label: {
-                    Label("Xuất báo cáo", systemImage: "doc.text")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(maxWidth: .infinity).padding(13)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 12))
-                }.buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var ramDescription: String {
-        guard let raw = inspection.hardware["RAM (bytes)"], let bytes = Double(raw) else { return "Chưa đọc" }
-        return String(format: "%.1f GB", bytes / 1_073_741_824)
-    }
-
-    private var overviewRight: some View {
-        VStack(spacing: 15) {
             card {
-                Label("MDM & Quản lý thiết bị", systemImage: "lock.shield.fill")
-                    .font(.system(size: 20, weight: .bold))
-                Text(inspection.mdm.status == "Chưa phát hiện quản lý hiện tại"
-                     ? "Thiết bị của bạn có khoảng 80% là không có MDM — để an tâm hơn, bạn nên kiểm tra thêm 2 bước dưới đây"
-                     : inspection.mdm.status)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(anTamOrange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12).background(warningBackground, in: RoundedRectangle(cornerRadius: 12))
-                Text("✦  Bạn nên kiểm tra thêm để yên tâm:")
-                    .font(.system(size: 13, weight: .bold))
-                Text("1  Kiểm tra hồ sơ quản lý thiết bị")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("Vào Cài đặt hệ thống → Cài đặt chung → Quản lý thiết bị.")
-                    .font(.caption).foregroundStyle(mutedInk)
-                Text("2  Kiểm tra sau khi xóa máy và kích hoạt lại")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("Lựa chọn thêm để chắc chắn hơn, không bắt buộc. Chỉ khi chủ máy đồng ý và đã sao lưu. Kết nối Internet, kiểm tra Remote Management.")
-                    .font(.caption).foregroundStyle(mutedInk)
                 HStack {
-                    Button("Kiểm tra MDM") { inspection.checkMDM() }.disabled(inspection.checkingMDM)
-                    Button("Xem chi tiết →") { page = .mdm }
+                    Label("Kết quả kiểm tra nhanh", systemImage: "checkmark.circle")
+                        .font(.title3.bold())
+                    Spacer()
+                    Text("\(passCount)/\(inspection.checks.count)")
+                        .font(.system(size: 25, weight: .bold)).foregroundStyle(anTamOrange)
                 }
+                ProgressView(value: Double(passCount), total: Double(inspection.checks.count))
+                    .tint(.green)
+                HStack(spacing: 20) {
+                    Label("\(passCount) Đạt", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                    Label("\(failCount) Có lỗi", systemImage: "xmark.circle.fill").foregroundStyle(.red)
+                    Label("\(remainingCount) Chưa thử", systemImage: "minus.circle.fill").foregroundStyle(mutedInk)
+                    Spacer()
+                    Button("Tiếp tục kiểm tra chi tiết →") {
+                        if !inspection.running && inspection.step < inspection.checks.count { inspection.resume() }
+                        page = .inspection
+                    }.buttonStyle(.borderedProminent)
+                }.font(.subheadline)
             }
         }
     }
@@ -781,6 +752,8 @@ struct MainView: View {
         case "Microphone": return "mic"
         case "Webcam": return "camera"
         case "Cổng kết nối": return "cable.connector"
+        case "Pin": return "battery.100percent"
+        case "SSD": return "internaldrive"
         default: return "laptopcomputer"
         }
     }
@@ -800,7 +773,7 @@ struct MainView: View {
                 Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
                     .font(.caption).foregroundStyle(mutedInk)
                 if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
-                    Text("Cả hai mục đều là Không — thiết bị của bạn có khoảng 80% là không có MDM, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
+                    Text("Cả hai mục đều là Không — không phát hiện quản lý MDM hiện tại, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
                         .font(.caption.bold()).foregroundStyle(anTamOrange)
                 } else {
                     Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
@@ -892,13 +865,43 @@ struct MainView: View {
     private var testWizard: some View {
         card {
             Text("Kiểm tra từng bước").font(.title3.bold())
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 185))], spacing: 8) {
+                ForEach(inspection.checks, id: \.self) { name in
+                    HStack {
+                        Image(systemName: symbolForTest(name)).foregroundStyle(anTamOrange)
+                        Text(name).font(.caption.bold())
+                        Spacer()
+                        let result = inspection.results.first(where: { $0.name == name })
+                        Image(systemName: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "circle")
+                            .foregroundStyle(result?.status == "Ổn" ? Color.green : result?.status == "Có lỗi" ? Color.red : Color.gray)
+                    }.padding(10).background(backgroundColor, in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
             ProgressView(value: Double(inspection.results.count), total: Double(inspection.checks.count))
             if inspection.running && inspection.step < inspection.checks.count {
                 let current = inspection.checks[inspection.step]
                 Text("Bước \(inspection.step + 1)/\(inspection.checks.count)")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(current).font(.title.bold()).foregroundStyle(anTamOrange)
-                DiagnosticToolView(name: current, tools: tools)
+                if current == "Pin" {
+                    let b = health.snapshot.battery
+                    Text("Sức khỏe: " + (b.healthPercent.map { String(format: "%.1f%%", $0) } ?? "Chưa xác định"))
+                    Text("Chu kỳ sạc: " + (b.cycleCount.map(String.init) ?? "Chưa đọc"))
+                    Text("Mức pin: " + (b.chargePercent.map { "\($0)%" } ?? "Chưa đọc"))
+                    Button("Đọc lại thông tin pin") { health.refresh() }
+                } else if current == "SSD" {
+                    ForEach(health.snapshot.storage) { disk in
+                        Text("\(disk.name) · \(disk.capacity) · SMART: \(disk.smart)")
+                    }
+                    if health.snapshot.storage.isEmpty {
+                        Text("Chưa nhận diện được SSD vật lý.")
+                    }
+                    Button("Đọc lại SSD") { health.refresh() }
+                    Text("SMART không khả dụng không đồng nghĩa ổ bị lỗi. Chưa bao gồm benchmark.")
+                        .font(.caption).foregroundStyle(mutedInk)
+                } else {
+                    DiagnosticToolView(name: current, tools: tools)
+                }
                 Text(tools.canConfirm(current)
                      ? "Hãy tự quan sát kết quả rồi xác nhận."
                      : "Hãy thực hiện bài test trước khi xác nhận Đạt. Có thể chọn Có lỗi hoặc Chưa thử bất cứ lúc nào.")
@@ -909,7 +912,7 @@ struct MainView: View {
                         if !inspection.running { page = .report }
                         if current == "Webcam" { tools.stopCamera() }
                         if current == "Microphone" { tools.stopRecording() }
-                    }.disabled(!tools.canConfirm(current))
+                    }.disabled((current == "Pin" && health.snapshot.battery.healthPercent == nil) || (current == "SSD" && health.snapshot.storage.isEmpty) || (!["Pin", "SSD"].contains(current) && !tools.canConfirm(current)))
                     Button("Có lỗi") { showIssue = true }
                     Button("Chưa thử") {
                         inspection.record("Chưa thử")
@@ -991,7 +994,7 @@ struct MainView: View {
                 HStack {
                     Text("Pin & Lưu trữ").font(.headline)
                     Spacer()
-                    Button("Xem dữ liệu") { page = .health }
+                    Button("Đọc lại dữ liệu") { health.refresh() }
                 }
                 let b = health.snapshot.battery
                 Text("Pin: " + (b.healthPercent.map { String(format: "%.1f%% (ước tính)", $0) } ?? "Chưa đủ dữ liệu"))
@@ -1001,7 +1004,6 @@ struct MainView: View {
                 Text("SMART không khả dụng không được coi là lỗi ổ.")
                     .font(.caption).foregroundStyle(mutedInk)
             }
-            mdmCard
             card {
                 Label("An Tâm nhắn bạn", systemImage: "heart.fill").font(.title3.bold())
                 HStack(alignment: .top, spacing: 14) {
