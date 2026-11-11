@@ -695,7 +695,7 @@ struct MainView: View {
                         HStack(spacing: 10) {
                             let battery = health.snapshot.battery
                             summaryTile("Pin", battery.healthPercent.map { String(format: "%.0f%% sức khỏe", $0) } ?? "Chưa xác định", icon: "battery.100percent", color: .green)
-                            summaryTile("Mức pin", battery.chargePercent.map { "\($0)%" } ?? "Chưa đọc", icon: "bolt")
+                            summaryTile("Trạng thái pin", (battery.isCharging.map { $0 ? "Đang sạc" : "Không sạc" } ?? "Chưa xác định") + " · " + (battery.chargePercent.map { "\($0)%" } ?? "—"), icon: "bolt")
                         }
                         summaryTile("macOS", inspection.hardware["macOS"] ?? "Chưa đọc", icon: "apple.logo")
                     }.frame(maxWidth: 480)
