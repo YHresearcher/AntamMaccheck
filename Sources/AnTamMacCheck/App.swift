@@ -1221,7 +1221,7 @@ struct AnTamMacCheckApp: App {
         return v.isEmpty ? "An Tâm Mac check" : "An Tâm Mac check v\(v)"
     }
     var body: some Scene {
-        WindowGroup(Self.displayName) { MainView() }
+        WindowGroup(LocalizedStringKey(Self.displayName)) { MainView() }
             .defaultSize(width: 1480, height: 960)
     }
 }
