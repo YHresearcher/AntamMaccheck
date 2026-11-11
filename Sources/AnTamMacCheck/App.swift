@@ -439,7 +439,7 @@ struct MainView: View {
                     }.buttonStyle(.plain)
                 }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
-                assetImage("MascotChecklist", width: 215, height: 260)
+                assetImage("MascotSidebar", width: 215, height: 260)
                     .frame(maxWidth: .infinity)
                 Link(destination: Shop.website) {
                     Label("vitinhantam.com", systemImage: "globe")
