@@ -136,7 +136,7 @@ enum NativeHealthProbe {
     private static func apfsVolumes() -> [StorageVolumeSnapshot] {
         guard let raw = run("/usr/sbin/diskutil", ["apfs", "list", "-plist"]),
               let data = raw.data(using: .utf8),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
               let root = plist as? [String: Any],
               let containers = root["Containers"] as? [[String: Any]]
         else { return [] }
