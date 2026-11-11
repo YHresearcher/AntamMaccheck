@@ -439,14 +439,14 @@ struct MainView: View {
                     }.buttonStyle(.plain)
                 }.padding(.horizontal, 12).padding(.top, 15)
                 Spacer()
-                assetImage("MascotSidebar", width: 215, height: 260)
+                assetImage("MascotSidebar", width: 240, height: 250)
                     .frame(maxWidth: .infinity)
                 Link(destination: Shop.website) {
                     Label("vitinhantam.com", systemImage: "globe")
                         .font(.caption).foregroundStyle(mutedInk)
                 }.padding(.horizontal, 20).padding(.bottom, 16)
             }
-            .frame(minWidth: 235, maxWidth: 245, maxHeight: .infinity, alignment: .topLeading)
+            .frame(minWidth: 275, maxWidth: 290, maxHeight: .infinity, alignment: .topLeading)
             .foregroundStyle(ink)
             .background(Color(red: 1.0, green: 0.97, blue: 0.935))
         } detail: {
@@ -801,7 +801,7 @@ struct MainView: View {
                     .foregroundStyle(inspection.mdm.status == "Phát hiện quản lý" ? Color.red : ink)
             }
             .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(Color.green.opacity(0.08), in: Capsule())
+            .background((inspection.mdm.status == "Phát hiện quản lý" ? Color.red : inspection.mdm.status == "Chưa phát hiện quản lý hiện tại" ? Color.green : Color.orange).opacity(0.08), in: Capsule())
             Text("MDM enrollment: \(inspection.mdm.enrollment)").font(.caption)
             Text("Automated enrollment: \(inspection.mdm.automatedEnrollment)").font(.caption)
             Divider()
@@ -821,7 +821,7 @@ struct MainView: View {
                     .font(.system(size: 15, weight: .bold))
             }
             .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(Color.green.opacity(0.08), in: Capsule())
+            .background((health.snapshot.activationLock == "Đã tắt" ? Color.green : anTamOrange).opacity(0.08), in: Capsule())
             Text("Trạng thái do macOS cung cấp, không tự suy đoán.").font(.caption).foregroundStyle(mutedInk)
             Spacer(minLength: 12)
         }
