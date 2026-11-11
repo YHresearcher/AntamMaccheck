@@ -41,7 +41,7 @@ struct Result: Identifiable, Codable {
     @Published var running = false
     @Published var step = 0
     @Published var errorNote = ""
-    @Published var info = "Bán bằng tâm để bạn an tâm"
+    @Published var info = "Bán bằng tâm để bạn yên tâm"
     let checks = ["Màn hình", "Bàn phím", "Trackpad", "Loa", "Microphone", "Webcam", "Cổng kết nối", "Ngoại quan", "Pin", "SSD"]
 
     /// Mức kết luận tổng hợp từ TẤT CẢ các tab (chức năng + pin + ổ +
@@ -138,14 +138,14 @@ struct Result: Identifiable, Codable {
             }
             return "Chưa đủ dữ liệu để kết luận. Còn \(unknown.count) hạng mục chưa xác nhận: \(unknown.joined(separator: ", "))."
         case .caution:
-            var text = "(checks.count)/(checks.count) bài kiểm tra đã xác nhận đạt. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
+            var text = "\(checks.count)/\(checks.count) bài kiểm tra đã xác nhận đạt. Còn điểm cần lưu ý: " + findings.cautions.joined(separator: "; ") + "."
             if mdm.enrollment == "Không" && mdm.automatedEnrollment == "Không" {
                 text += " MDM cả hai mục đều Không — không phát hiện quản lý MDM hiện tại."
             }
             if health?.activationLock == "Đã tắt" { text += " Activation Lock đã tắt." }
             return text
         case .good:
-            var text = "(checks.count)/(checks.count) bài kiểm tra đã xác nhận đạt"
+            var text = "\(checks.count)/\(checks.count) bài kiểm tra đã xác nhận đạt"
             if let pct = health?.battery.healthPercent {
                 text += String(format: "; pin còn %.1f%%", pct)
             }
@@ -236,7 +236,7 @@ struct Result: Identifiable, Codable {
             // là lựa chọn thêm để chắc chắn hơn, không bắt buộc.
             let warning: String
             if enrollment == "Không" && automated == "Không" {
-                warning = "MDM enrollment và Automated Enrollment đều là Không — không phát hiện quản lý MDM hiện tại. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị; xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc."
+                warning = "MDM enrollment và Automated Enrollment đều là Không — thiết bị của bạn có khoảng 80% là không bị quản lý MDM. Để an tâm hơn, bạn nên kiểm tra thêm hồ sơ quản lý thiết bị; xóa toàn bộ máy và kích hoạt lại chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc."
             } else {
                 warning = MDMCheck().warning
             }
@@ -284,23 +284,27 @@ struct Result: Identifiable, Codable {
                 if name == "Model" { modelIdentifier = values[name] ?? "Không khả dụng" }
             } catch { values[name] = "Không khả dụng" }
         }
-        // Trên Apple Silicon, machdep.cpu.brand_string thường không tồn tại.
-        // system_profiler cung cấp chip_type thực tế (Apple M1/M2/M3/...).
-        if values["Chip / CPU"] == "Không khả dụng" {
+        // system_profiler luôn chạy để lấy số serial (S/N); trên Apple Silicon
+        // nó còn cung cấp chip_type và machine_name thật vì machdep.cpu.brand_string
+        // thường không tồn tại. Không bịa giá trị khi đọc lỗi.
+        do {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
             p.arguments = ["SPHardwareDataType", "-json"]
             let out = Pipe()
             p.standardOutput = out
             p.standardError = Pipe()
-            do {
-                try p.run()
-                let data = out.fileHandleForReading.readDataToEndOfFile()
-                p.waitUntilExit()
-                if p.terminationStatus == 0,
-                   let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let entries = root["SPHardwareDataType"] as? [[String: Any]],
-                   let device = entries.first {
+            try p.run()
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            p.waitUntilExit()
+            if p.terminationStatus == 0,
+               let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let entries = root["SPHardwareDataType"] as? [[String: Any]],
+               let device = entries.first {
+                if let serial = device["serial_number"] as? String, !serial.isEmpty {
+                    values["Serial Number"] = serial
+                }
+                if values["Chip / CPU"] == "Không khả dụng" {
                     if let chip = device["chip_type"] as? String, !chip.isEmpty {
                         values["Chip / CPU"] = chip
                     }
@@ -308,8 +312,8 @@ struct Result: Identifiable, Codable {
                         values["Model"] = model
                     }
                 }
-            } catch { /* Giữ trạng thái Không khả dụng thay vì bịa CPU. */ }
-        }
+            }
+        } catch { /* Giữ trạng thái Không khả dụng thay vì bịa giá trị. */ }
         values["Model Identifier"] = values["Model Identifier"] ?? modelIdentifier
         hardware = values
         info = "Đã đọc cấu hình cơ bản rồi nè! Đây chưa phải kết quả kiểm tra sức khỏe nha."
@@ -425,7 +429,7 @@ struct MainView: View {
                     assetImage("AnTamLogo", width: 55, height: 55)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("An Tâm Mac check").font(.system(size: 17, weight: .bold))
-                        Text("Bán bằng tâm để bạn an tâm")
+                        Text("Bán bằng tâm để bạn yên tâm")
                             .font(.system(size: 10)).foregroundStyle(mutedInk)
                     }
                 }.padding(.horizontal, 12).padding(.top, 18)
@@ -456,7 +460,7 @@ struct MainView: View {
                         HStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(page.rawValue).font(.system(size: 29, weight: .bold))
-                                Text("Bán bằng tâm để bạn an tâm")
+                                Text("Bán bằng tâm để bạn yên tâm")
                                     .font(.subheadline).foregroundStyle(mutedInk)
                             }
                             Spacer()
@@ -522,7 +526,7 @@ struct MainView: View {
             Text("VI TÍNH AN TÂM")
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .foregroundStyle(ink)
-            Text("Bán bằng tâm để bạn an tâm")
+            Text("Bán bằng tâm để bạn yên tâm")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(anTamOrange)
                 .multilineTextAlignment(.center)
@@ -610,30 +614,11 @@ struct MainView: View {
         case "Trackpad": return Color(red: 0.83, green: 0.97, blue: 0.92)
         case "Microphone": return Color(red: 0.88, green: 0.98, blue: 0.84)
         case "Cổng kết nối": return Color(red: 1, green: 0.88, blue: 0.84)
+        case "Pin": return Color(red: 0.82, green: 0.94, blue: 0.82)
+        case "SSD": return Color(red: 0.90, green: 0.90, blue: 0.96)
         default: return Color(red: 1, green: 0.95, blue: 0.81)
         }
     }
-
-    private func colorfulTestRow(_ name: String) -> some View {
-        let result = inspection.results.first(where: { $0.name == name })
-        let value = result?.status ?? "Chưa thử"
-        return HStack(spacing: 10) {
-            Image(systemName: symbolForTest(name))
-                .font(.system(size: 16, weight: .bold)).foregroundStyle(ink)
-                .frame(width: 31, height: 31)
-                .background(.white.opacity(0.57), in: RoundedRectangle(cornerRadius: 8))
-            Text(name).font(.system(size: 13, weight: .semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(value).font(.system(size: 12))
-                .foregroundStyle(value == "Có lỗi" ? Color.red : mutedInk)
-            Image(systemName: value == "Ổn" ? "checkmark.circle.fill"
-                : value == "Có lỗi" ? "xmark.circle.fill" : "circle")
-                .foregroundStyle(value == "Ổn" ? Color.green : value == "Có lỗi" ? Color.red : Color.gray)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(testColor(name), in: RoundedRectangle(cornerRadius: 11))
-    }
-
 
     private var passCount: Int { inspection.results.filter { $0.status == "Ổn" }.count }
     private var failCount: Int { inspection.results.filter { $0.status == "Có lỗi" }.count }
@@ -646,13 +631,12 @@ struct MainView: View {
         let model = inspection.hardware["Model"] ?? "Đang nhận diện Mac"
         let identifier = inspection.hardware["Model Identifier"] ?? ""
         let chip = inspection.hardware["Chip / CPU"] ?? ""
-        switch identifier {
-        case "Mac14,9": return "MacBook Pro 14\" (2023) · \(chip)"
-        case "Mac14,10": return "MacBook Pro 16\" (2023) · \(chip)"
-        case "Mac14,5": return "MacBook Pro 14\" (2023) · \(chip)"
-        case "Mac14,6": return "MacBook Pro 16\" (2023) · \(chip)"
-        default: return model
+        // Tên marketing tra từ bảng MacModels (theapplewiki, chỉ phần Mac);
+        // máy chưa có trong bảng thì hiện tên model của macOS.
+        if let name = MacModels.marketingName(for: identifier) {
+            return chip.isEmpty ? name : "\(name) · \(chip)"
         }
+        return model
     }
     private func summaryTile(_ title: String, _ detail: String, icon: String, color: Color = anTamOrange) -> some View {
         HStack(spacing: 12) {
@@ -695,49 +679,10 @@ struct MainView: View {
                 overviewMDMCard.frame(maxWidth: .infinity)
                 overviewActivationCard.frame(width: 310)
             }
-            HStack(alignment: .top, spacing: 16) {
-                overviewSummaryCard.frame(maxWidth: .infinity)
-                overviewTestListCard.frame(maxWidth: .infinity)
-            }
+            // Danh sách bài kiểm tra KHÔNG ở dashboard nữa — nó đã có trong
+            // tab "Kiểm tra chi tiết" (lưới trạng thái đầu trang wizard).
+            overviewSummaryCard.frame(maxWidth: .infinity)
         }
-    }
-
-    private var overviewTestListCard: some View {
-        card {
-            Label("Danh sách bài kiểm tra (\(inspection.checks.count))", systemImage: "list.bullet")
-                .font(.system(size: 17, weight: .bold))
-            let names = inspection.checks
-            let midpoint = (names.count + 1) / 2
-            HStack(alignment: .top, spacing: 14) {
-                dashboardTestColumn(Array(names.prefix(midpoint)))
-                Rectangle().fill(Color.gray.opacity(0.17)).frame(width: 1)
-                dashboardTestColumn(Array(names.dropFirst(midpoint)))
-            }
-        }
-    }
-
-    private func dashboardTestColumn(_ names: [String]) -> some View {
-        VStack(spacing: 0) {
-            ForEach(names, id: \.self) { name in
-                let result = inspection.results.first { $0.name == name }
-                let passed = result?.status == "Ổn"
-                let failed = result?.status == "Có lỗi"
-                HStack(spacing: 7) {
-                    Image(systemName: passed ? "checkmark.circle.fill" :
-                           failed ? "xmark.circle.fill" : "minus.circle.fill")
-                        .foregroundStyle(passed ? Color.green : failed ? Color.red : Color.gray)
-                    Text(name).font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    Text(passed ? "Đạt" : failed ? "Có lỗi" : "Chưa thử")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(passed ? Color.green : failed ? Color.red : mutedInk)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background((passed ? Color.green : failed ? Color.red : Color.gray).opacity(0.08), in: Capsule())
-                }.padding(.vertical, 7)
-                Divider().opacity(0.45)
-            }
-        }.frame(maxWidth: .infinity)
     }
 
     private var overviewDeviceCard: some View {
@@ -754,6 +699,10 @@ struct MainView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "laptopcomputer").foregroundStyle(mutedInk)
                         Text("Model: \(inspection.hardware["Model Identifier"] ?? "Chưa đọc")")
+                    }
+                    HStack(spacing: 8) {
+                        Image(systemName: "barcode").foregroundStyle(mutedInk)
+                        Text("S/N: \(inspection.hardware["Serial Number"] ?? "Chưa đọc")")
                     }
                     HStack(spacing: 8) {
                         Image(systemName: "cpu").foregroundStyle(mutedInk)
@@ -904,7 +853,7 @@ struct MainView: View {
                 Text("Chỉ là lựa chọn thêm để chắc chắn hơn, không bắt buộc — chỉ thực hiện khi chủ máy đồng ý và đã sao lưu dữ liệu. Kết nối Internet khi thiết lập lại, xem có màn hình Remote Management xuất hiện không.")
                     .font(.caption).foregroundStyle(mutedInk)
                 if inspection.mdm.enrollment == "Không" && inspection.mdm.automatedEnrollment == "Không" {
-                    Text("Cả hai mục đều là Không — không phát hiện quản lý MDM hiện tại, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
+                    Text("Cả hai mục đều là Không — thiết bị của bạn có khoảng 80% là không có MDM, không phải 100%. Để an tâm hơn, bạn nên làm thêm 2 bước ở trên; xóa toàn bộ máy và kích hoạt lại thì không bắt buộc.")
                         .font(.caption.bold()).foregroundStyle(anTamOrange)
                 } else {
                     Text("Không phát hiện MDM không bảo đảm thiết bị chưa từng được tổ chức quản lý.")
@@ -951,7 +900,7 @@ struct MainView: View {
                 Spacer()
                 Image(systemName: "checkmark.shield.fill").foregroundStyle(anTamOrange)
             }
-            Text("Bán bằng tâm để bạn an tâm").font(.caption.weight(.semibold)).foregroundStyle(anTamOrange)
+            Text("Bán bằng tâm để bạn yên tâm").font(.caption.weight(.semibold)).foregroundStyle(anTamOrange)
             Text(Shop.warranty).font(.caption.bold()).foregroundStyle(anTamOrange)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(anTamOrange.opacity(0.1), in: Capsule())
@@ -999,13 +948,15 @@ struct MainView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 185))], spacing: 8) {
                 ForEach(inspection.checks, id: \.self) { name in
                     HStack {
-                        Image(systemName: symbolForTest(name)).foregroundStyle(anTamOrange)
+                        Image(systemName: symbolForTest(name)).foregroundStyle(ink)
+                            .frame(width: 31, height: 31)
+                            .background(.white.opacity(0.57), in: RoundedRectangle(cornerRadius: 8))
                         Text(name).font(.caption.bold())
                         Spacer()
                         let result = inspection.results.first(where: { $0.name == name })
                         Image(systemName: result?.status == "Ổn" ? "checkmark.circle.fill" : result?.status == "Có lỗi" ? "xmark.circle.fill" : "circle")
                             .foregroundStyle(result?.status == "Ổn" ? Color.green : result?.status == "Có lỗi" ? Color.red : Color.gray)
-                    }.padding(10).background(backgroundColor, in: RoundedRectangle(cornerRadius: 8))
+                    }.padding(10).background(testColor(name), in: RoundedRectangle(cornerRadius: 8))
                 }
             }
             ProgressView(value: Double(inspection.results.count), total: Double(inspection.checks.count))

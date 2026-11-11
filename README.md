@@ -2,11 +2,11 @@
 
 Ứng dụng kiểm tra Mac cũ trước khi mua của **Vi tính An Tâm** — https://vitinhantam.com.
 
-> **Bán bằng tâm để bạn an tâm.**
+> **Bán bằng tâm để bạn yên tâm.**
 
 Mở app lên, nó tự đọc cấu hình máy rồi dẫn bạn kiểm tra từng món: màn hình, bàn phím, trackpad, loa, micro, webcam, cổng kết nối, ngoại quan, pin, ổ cứng, MDM và Activation Lock. Xong hết thì trang Báo cáo tự tổng kết lại: máy ổn hay không, còn điểm nào cần lưu ý, và một lời nhắn của An Tâm ở cuối.
 
-App viết bằng SwiftUI, chạy trên macOS 13 trở lên. Bản hiện tại là 1.1.
+App viết bằng SwiftUI, chạy trên macOS 13 trở lên. Bản hiện tại là 1.2.
 
 ## Tải về
 
@@ -40,16 +40,15 @@ sw_vers -productVersion
 
 ## Cách dùng
 
-Mở app là nó tự đọc cấu hình máy (model, chip, RAM, macOS) và tự đọc pin với ổ cứng, không tự chạy test nào khác. Các trang trong sidebar, theo thứ tự:
+Mở app là nó tự đọc cấu hình máy (tên máy, model ID, S/N, chip, RAM, macOS) và tự đọc pin với ổ cứng, không tự chạy test nào khác. Sidebar có 3 mục, theo thứ tự:
 
-- **Tổng quan:** thẻ máy, kết quả kiểm tra nhanh 8 mục, tình trạng MDM, tóm tắt pin và ổ cứng.
-- **Kiểm tra chi tiết:** wizard 8 bước, làm từng bước một. Mỗi bước có 4 lựa chọn: **Ổn rồi**, **Có lỗi** (ghi rõ lỗi gặp phải), **Chưa thử**, **Dừng toàn bộ**. Nút **Ổn rồi** chỉ bấm được sau khi bạn đã thực hiện bài test đó, không phải cứ mở lên là đạt.
-- **Thông tin Mac:** cấu hình đọc từ macOS, có nút Làm mới để đọc lại.
-- **Sức khỏe phần cứng:** pin, ổ lưu trữ/SMART và Activation Lock (xem bên dưới).
-- **MDM & Quản lý:** kiểm tra quản lý thiết bị.
+- **Tổng quan:** thẻ Thông tin Mac (tên thân thiện, Model ID, S/N, CPU, số nhân, RAM, SSD, pin + độ chai + đang sạc/không sạc, macOS), thẻ MDM, thẻ Activation Lock, và thẻ tóm tắt "Đã pass x/10 bài kiểm tra".
+- **Kiểm tra chi tiết:** lưới 10 bài kiểm tra tô màu theo trạng thái, rồi wizard làm từng bước một. Mỗi bước có 4 lựa chọn: **Ổn rồi**, **Có lỗi** (ghi rõ lỗi gặp phải), **Chưa thử**, **Dừng toàn bộ**. Nút **Ổn rồi** chỉ bấm được sau khi bạn đã thực hiện bài test đó, không phải cứ mở lên là đạt. Bài Pin và SSD hiện số liệu đã đọc được rồi mới cho xác nhận.
 - **Báo cáo:** kết luận tổng hợp, kết quả chi tiết, lời nhắn của An Tâm, và nút xuất báo cáo JSON (`AnTam-Mac-check-report.json`).
 
-### 8 bài kiểm tra chức năng
+Nút **Giới thiệu** ở sidebar mở bảng giới thiệu shop (logo, slogan, 2 chi nhánh, bảo hành 6 tháng, vitinhantam.com, phiên bản).
+
+### 10 bài kiểm tra
 
 - **Màn hình:** test toàn màn hình với 12 màu. Dùng phím ← / → để chuyển màu, Esc để thoát. Phải xem hết 12 màu mới xác nhận được. App không tự phát hiện điểm chết hay ám màu, bạn tự quan sát.
 - **Bàn phím:** gõ phím thật thì phím tương ứng trên bàn phím ảo sáng xanh. Cần nhận ít nhất 10 phím mới xác nhận được. Phím bổ trợ trái/phải (Caps, Shift, Ctrl, Option, Cmd, Fn) được nhận qua `flagsChanged` của macOS, vì chúng không gửi sự kiện bấm phím thường. Bàn phím MacBook tích hợp không có Ctrl phải, phím đó chỉ sáng khi dùng bàn phím rời.
@@ -59,6 +58,8 @@ Mở app là nó tự đọc cấu hình máy (model, chip, RAM, macOS) và tự
 - **Webcam:** app xin quyền camera rồi hiện hình trực tiếp, bạn tự quan sát độ rõ và nhiễu.
 - **Cổng kết nối:** đọc danh sách thiết bị USB/Thunderbolt mà hệ thống nhìn thấy. Muốn chắc từng cổng thì cắm thiết bị thật vào từng cổng và xem nó có xuất hiện trong danh sách không. Danh sách có thiết bị không có nghĩa mọi cổng vật lý đều tốt.
 - **Ngoại quan:** kiểm tra bằng mắt: vỏ máy, bản lề, điểm móp, dấu tháo lắp, pin phồng, cổng sạc.
+- **Pin:** hiện sức khỏe pin (%), số chu kỳ sạc và mức pin hiện tại. Nút "Ổn rồi" chỉ bấm được khi đã đọc được sức khỏe pin. Pin dưới 80% là đã suy giảm, nên tính chi phí thay.
+- **SSD:** hiện từng ổ đã nhận diện (tên, dung lượng, SMART). Nút "Ổn rồi" chỉ bấm được khi đã nhận diện được ổ. SMART không đọc được không có nghĩa ổ hỏng, cũng không có nghĩa ổ tốt, chỉ là chưa xác nhận được.
 
 ### Pin, ổ cứng và Activation Lock
 
@@ -84,7 +85,7 @@ Kết luận được tổng hợp tự động từ tất cả các tab, theo t
 | **PHÁT HIỆN LỖI — CẦN ĐÁNH GIÁ** | Có hạng mục chức năng lỗi, pin dưới 80%, hoặc SMART báo lỗi. |
 | **CHƯA ĐỦ DỮ LIỆU — CHƯA KẾT LUẬN ĐƯỢC** | Còn hạng mục chức năng chưa thử. |
 | **ĐÃ HOÀN TẤT KIỂM TRA — CÓ ĐIỂM CẦN LƯU Ý** | Chức năng đều ổn nhưng còn điểm cần lưu ý: pin 80–89%, pin quá 1000 chu kỳ, SMART chưa đọc được, Activation Lock chưa xác định... |
-| **MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA** | Chức năng đều ổn, pin từ 90%, SMART Verified, MDM cả hai mục đều Không, Activation Lock đã tắt. |
+| **MÁY ỔN — ĐẠT CÁC MỤC ĐÃ KIỂM TRA** | 10/10 hạng mục đều ổn: 8 bài chức năng đạt, pin từ 90%, SMART Verified, MDM cả hai mục đều Không, Activation Lock đã tắt. |
 
 Ngưỡng pin theo Apple: dưới 80% là pin đã suy giảm, nên tính chi phí thay; trên 1000 chu kỳ là vượt mức thiết kế của MacBook.
 
