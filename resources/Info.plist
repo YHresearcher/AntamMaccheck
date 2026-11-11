@@ -10,8 +10,8 @@
     <key>NSCameraUsageDescription</key><string>An Tâm Mac check cần quyền camera khi bạn tự bắt đầu bài kiểm tra webcam. Không tải hình ảnh lên máy chủ.</string>
     <key>NSMicrophoneUsageDescription</key><string>An Tâm Mac check cần quyền microphone để bạn ghi âm thử và nghe lại trên thiết bị. Bản ghi lưu tạm trong máy.</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.3.0</string>
-    <key>CFBundleVersion</key><string>3</string>
+    <key>CFBundleShortVersionString</key><string>1.1</string>
+    <key>CFBundleVersion</key><string>4</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>NSHighResolutionCapable</key><true/>
 </dict>
