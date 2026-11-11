@@ -42,7 +42,7 @@ sw_vers -productVersion
 
 Mở app là nó tự đọc cấu hình máy (tên máy, model ID, S/N, chip, RAM, macOS) và tự đọc pin với ổ cứng, không tự chạy test nào khác. Sidebar có 3 mục, theo thứ tự:
 
-- **Tổng quan:** thẻ Thông tin Mac (tên thân thiện, Model ID, S/N, CPU, số nhân, RAM, SSD, pin + độ chai + đang sạc/không sạc, macOS), thẻ MDM, thẻ Activation Lock, và thẻ tóm tắt "Đã pass x/10 bài kiểm tra".
+- **Tổng quan:** thẻ Thông tin Mac (tên thân thiện, Model ID, S/N, CPU, số nhân CPU/GPU, RAM, SSD, pin + độ chai + đang sạc/không sạc, macOS), hàng MDM + Activation Lock, và hàng tóm tắt "Đã pass x/10 bài kiểm tra" + danh sách 10 bài kiểm tra.
 - **Kiểm tra chi tiết:** lưới 10 bài kiểm tra tô màu theo trạng thái, rồi wizard làm từng bước một. Mỗi bước có 4 lựa chọn: **Ổn rồi**, **Có lỗi** (ghi rõ lỗi gặp phải), **Chưa thử**, **Dừng toàn bộ**. Nút **Ổn rồi** chỉ bấm được sau khi bạn đã thực hiện bài test đó, không phải cứ mở lên là đạt. Bài Pin và SSD hiện số liệu đã đọc được rồi mới cho xác nhận.
 - **Báo cáo:** kết luận tổng hợp, kết quả chi tiết, lời nhắn của An Tâm, và nút xuất báo cáo JSON (`AnTam-Mac-check-report.json`).
 
