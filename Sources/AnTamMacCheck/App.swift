@@ -728,6 +728,12 @@ struct MainView: View {
         case "lock.fill": return "IconLock"
         case "arrow.clockwise": return "IconRefresh"
         case "arrow.right": return "IconArrow"
+        // 5 icon kiểm tra đợt 2 (file gốc user gửi, giữ nguyên tên).
+        case "keyboard": return "ban_phim_keyboard"
+        case "hand.point.up.left": return "trackpad"
+        case "speaker.wave.2": return "loa_speaker"
+        case "mic": return "microphone"
+        case "camera": return "webcam_camera"
         case "questionmark.circle.fill": return "IconHelp"
         default: return nil
         }
@@ -1176,8 +1182,8 @@ struct MainView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 185))], spacing: 8) {
                 ForEach(inspection.checks, id: \.self) { name in
                     HStack {
-                        Image(systemName: symbolForTest(name)).foregroundStyle(ink)
-                            .frame(width: 31, height: 31)
+                        brandIcon(customIconAsset(for: symbolForTest(name)), fallback: symbolForTest(name), size: 31)
+                            .foregroundStyle(ink)
                             .background(.white.opacity(0.57), in: RoundedRectangle(cornerRadius: 8))
                         Text(tr(name)).font(.system(size: 14, weight: .semibold))
                         Spacer()

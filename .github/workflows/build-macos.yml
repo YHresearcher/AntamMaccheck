@@ -135,6 +135,10 @@ jobs:
           for icon in resources/Icon*.png; do
             cp "$icon" "$APP/Contents/Resources/"
           done
+          # 5 icon kiểm tra đợt 2 (giữ nguyên tên file, không theo mẫu Icon*.png).
+          for icon in loa_speaker webcam_camera ban_phim_keyboard trackpad microphone; do
+            cp "resources/$icon.png" "$APP/Contents/Resources/"
+          done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
           plutil -lint "$APP/Contents/Info.plist"
           # SwiftPM's raw executable is wrapped into a .app above. Sign the
