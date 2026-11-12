@@ -210,72 +210,73 @@ struct CameraPreview: NSViewRepresentable {
 struct DiagnosticToolView: View {
     let name: String
     @ObservedObject var tools: DiagnosticSession
+    @EnvironmentObject private var lang: LanguageStore
     @State private var displaySheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             switch name {
             case "Màn hình":
-                Text("Kiểm tra toàn màn hình với 12 màu (RGB, CMY, nhiều mức xám, trắng/đen). Dùng phím ← / → để chuyển, Esc để thoát.")
-                Button("Mở test toàn màn hình") {
+                Text(tr("Kiểm tra toàn màn hình với 12 màu (RGB, CMY, nhiều mức xám, trắng/đen). Dùng phím ← / → để chuyển, Esc để thoát."))
+                Button(tr("Mở test toàn màn hình")) {
                     tools.mark("Màn hình")
                     tools.colorIndex = -1
                     FullscreenColorTester.shared.open { index in tools.colorIndex = index }
                 }
-                Text("Đã xem \(max(0, tools.colorIndex + 1))/\(tools.colorCount) màu.")
+                Text(trf("Đã xem %d/%d màu.", max(0, tools.colorIndex + 1), tools.colorCount))
                     .font(.caption)
             case "Bàn phím":
-                Text("Bàn phím ảo sáng lên khi phím vật lý được nhận. Nhấp vùng dưới để nhận bàn phím.")
+                Text(tr("Bàn phím ảo sáng lên khi phím vật lý được nhận. Nhấp vùng dưới để nhận bàn phím."))
                 VirtualKeyboardView(pressed: tools.capturedKeys)
                 KeyCapture { code in tools.capturedKeys.insert(code) }
                     .frame(height: 48).frame(maxWidth: .infinity)
                     .background(Color.orange.opacity(0.11), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(Text("Nhấp đây rồi gõ phím • Đã nhận \(tools.capturedKeys.count) phím")
+                    .overlay(Text(trf("Nhấp đây rồi gõ phím • Đã nhận %d phím", tools.capturedKeys.count))
                         .allowsHitTesting(false))
-                Text("Bấm từng phím bổ trợ trái/phải riêng để kiểm tra: Caps, Shift, Ctrl, Option, Cmd, Fn đều sáng khi nhận. Bàn phím MacBook tích hợp không có Ctrl phải — phím đó chỉ sáng khi dùng bàn phím rời.")
+                Text(tr("Bấm từng phím bổ trợ trái/phải riêng để kiểm tra: Caps, Shift, Ctrl, Option, Cmd, Fn đều sáng khi nhận. Bàn phím MacBook tích hợp không có Ctrl phải — phím đó chỉ sáng khi dùng bàn phím rời."))
                     .font(.caption).foregroundStyle(.secondary)
             case "Trackpad":
-                Text("Chỉ cần di chuyển ngón tay trên trackpad, KHÔNG cần đè click. Thử nhấp, kéo, cuộn và đa điểm riêng.")
+                Text(tr("Chỉ cần di chuyển ngón tay trên trackpad, KHÔNG cần đè click. Thử nhấp, kéo, cuộn và đa điểm riêng."))
                 PointerMotionCapture { tools.dragSamples += 1 }
                     .frame(height: 160).frame(maxWidth: .infinity)
                     .background(Color.teal.opacity(0.13), in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(Text("Di chuyển con trỏ trong vùng này — \(tools.dragSamples) lượt di chuyển")
+                    .overlay(Text(trf("Di chuyển con trỏ trong vùng này — %d lượt di chuyển", tools.dragSamples))
                         .allowsHitTesting(false))
-                Text("Chuột rời cũng tạo chuyển động tương tự. Việc xác nhận trackpad thật vẫn cần người kiểm tra.")
+                Text(tr("Chuột rời cũng tạo chuyển động tương tự. Việc xác nhận trackpad thật vẫn cần người kiểm tra."))
                     .font(.caption).foregroundStyle(.secondary)
             case "Loa":
-                Text("Phát bản nhạc kiểm tra stereo gốc: giai điệu kênh TRÁI, sau đó kênh PHẢI. Chú ý loa rè/méo và âm lượng từng bên.")
-                Button("♫ Phát file nhạc test trái/phải") { tools.playSpeaker() }
-                Text(tools.speakerState).font(.caption).foregroundStyle(.secondary)
+                Text(tr("Phát bản nhạc kiểm tra stereo gốc: giai điệu kênh TRÁI, sau đó kênh PHẢI. Chú ý loa rè/méo và âm lượng từng bên."))
+                Button(tr("♫ Phát file nhạc test trái/phải")) { tools.playSpeaker() }
+                Text(tr(tools.speakerState)).font(.caption).foregroundStyle(.secondary)
             case "Microphone":
-                Text("Ghi âm từ mic được chọn, sau đó nghe lại để xác nhận chất lượng.")
+                Text(tr("Ghi âm từ mic được chọn, sau đó nghe lại để xác nhận chất lượng."))
                 HStack {
-                    Button(tools.recording ? "■ Dừng ghi âm" : "● Ghi âm") {
+                    Button(tools.recording ? tr("■ Dừng ghi âm") : tr("● Ghi âm")) {
                         if tools.recording { tools.stopRecording() } else { tools.startRecording() }
                     }
-                    Button("▶ Nghe lại") { tools.playRecording() }.disabled(tools.recording)
+                    Button(tr("▶ Nghe lại")) { tools.playRecording() }.disabled(tools.recording)
                 }
-                Text(tools.recorderState).font(.caption).foregroundStyle(.secondary)
+                Text(tr(tools.recorderState)).font(.caption).foregroundStyle(.secondary)
             case "Webcam":
-                Text("Xin quyền Camera, xem hình trực tiếp rồi đánh giá độ rõ và hiện tượng nhiễu.")
+                Text(tr("Xin quyền Camera, xem hình trực tiếp rồi đánh giá độ rõ và hiện tượng nhiễu."))
                 HStack {
-                    Button(tools.webcamRunning ? "Dừng camera" : "Mở camera") {
+                    Button(tools.webcamRunning ? tr("Dừng camera") : tr("Mở camera")) {
                         if tools.webcamRunning { tools.stopCamera() } else { tools.beginCamera() }
                     }
-                    Text(tools.cameraState).font(.caption)
+                    Text(tr(tools.cameraState)).font(.caption)
                 }
                 if let session = tools.cameraPreview() {
                     CameraPreview(session: session).frame(height: 185).clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             case "Cổng kết nối":
-                Text("Cắm từng cổng USB/Thunderbolt thực tế và quan sát thiết bị xuất hiện trong danh sách.")
-                Button("Làm mới thiết bị kết nối") { tools.detectPorts() }
+                Text(tr("Cắm từng cổng USB/Thunderbolt thực tế và quan sát thiết bị xuất hiện trong danh sách."))
+                Button(tr("Làm mới thiết bị kết nối")) { tools.detectPorts() }
                 ScrollView {
-                    Text(tools.portsText).font(.system(size: 11, design: .monospaced))
+                    Text(tr(tools.portsText)).font(.system(size: 11, design: .monospaced))
                         .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
                 }.frame(height: 135).padding(8).background(Color.gray.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
             default:
-                Text("Kiểm tra bằng mắt: vỏ máy, bản lề, điểm móp, dấu tháo lắp, pin phồng, cổng và ngoại quan. Không tự xác nhận.")
+                Text(tr("Kiểm tra bằng mắt: vỏ máy, bản lề, điểm móp, dấu tháo lắp, pin phồng, cổng và ngoại quan. Không tự xác nhận."))
             }
         }
     }

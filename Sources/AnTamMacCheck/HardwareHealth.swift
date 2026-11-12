@@ -204,12 +204,13 @@ final class HardwareHealthModel: ObservableObject {
 
 struct HardwareHealthView: View {
     @ObservedObject var model: HardwareHealthModel
+    @EnvironmentObject private var lang: LanguageStore
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Sức khỏe phần cứng").font(.system(size: 25, weight: .bold))
+                Text(tr("Sức khỏe phần cứng")).font(.system(size: 25, weight: .bold))
                 Spacer()
-                Button(model.isReading ? "Đang đọc..." : "Đọc lại dữ liệu") {
+                Button(model.isReading ? tr("Đang đọc...") : tr("Đọc lại dữ liệu")) {
                     model.refresh()
                 }.disabled(model.isReading)
             }
@@ -217,34 +218,34 @@ struct HardwareHealthView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     let b = model.snapshot.battery
                     if b.present {
-                        value("Chu kỳ sạc", b.cycleCount.map(String.init) ?? "Không khả dụng")
-                        value("Dung lượng thiết kế", b.designMAh.map { "\($0) mAh" } ?? "Không khả dụng")
-                        value("Dung lượng sạc đầy gần nhất", b.maxMAh.map { "\($0) mAh" } ?? "Không khả dụng")
-                        value("Sức khỏe ước tính", b.healthPercent.map { String(format: "%.1f%%", $0) } ?? "Không khả dụng")
-                        value("Mức sạc hiện tại", b.chargePercent.map { "\($0)%" } ?? "Không khả dụng")
+                        value(tr("Chu kỳ sạc"), b.cycleCount.map(String.init) ?? tr("Không khả dụng"))
+                        value(tr("Dung lượng thiết kế"), b.designMAh.map { "\($0) mAh" } ?? tr("Không khả dụng"))
+                        value(tr("Dung lượng sạc đầy gần nhất"), b.maxMAh.map { "\($0) mAh" } ?? tr("Không khả dụng"))
+                        value(tr("Sức khỏe ước tính"), b.healthPercent.map { String(format: "%.1f%%", $0) } ?? tr("Không khả dụng"))
+                        value(tr("Mức sạc hiện tại"), b.chargePercent.map { "\($0)%" } ?? tr("Không khả dụng"))
                     } else {
-                        Text("Không tìm thấy AppleSmartBattery. Có thể máy không có pin hoặc macOS hạn chế dữ liệu.")
+                        Text(tr("Không tìm thấy AppleSmartBattery. Có thể máy không có pin hoặc macOS hạn chế dữ liệu."))
                     }
-                    Text("Dữ liệu nguồn: ioreg / AppleSmartBattery; tỷ lệ dung lượng chỉ là ước tính, không chứng nhận pin tốt.")
+                    Text(tr("Dữ liệu nguồn: ioreg / AppleSmartBattery; tỷ lệ dung lượng chỉ là ước tính, không chứng nhận pin tốt."))
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(10)
             }
             GroupBox("Storage & SMART") {
                 VStack(alignment: .leading, spacing: 9) {
                     if model.snapshot.storage.isEmpty {
-                        Text("Không có dữ liệu ổ lưu trữ phù hợp để hiển thị.")
+                        Text(tr("Không có dữ liệu ổ lưu trữ phù hợp để hiển thị."))
                     }
                     ForEach(model.snapshot.storage) { disk in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(disk.name).fontWeight(.semibold)
-                            value("Dung lượng", disk.capacity)
-                            value("SMART", disk.smart)
-                            Text("Nguồn: \(disk.source)").font(.caption).foregroundStyle(.secondary)
+                            value(tr("Dung lượng"), disk.capacity)
+                            value("SMART", tr(disk.smart))
+                            Text(trf("Nguồn: %@", disk.source)).font(.caption).foregroundStyle(.secondary)
                         }
                         Divider()
                     }
                     if !model.snapshot.storageVolumes.isEmpty {
-                        DisclosureGroup("Xem các volume APFS (\(model.snapshot.storageVolumes.count))") {
+                        DisclosureGroup(trf("Xem các volume APFS (%d)", model.snapshot.storageVolumes.count)) {
                             ForEach(model.snapshot.storageVolumes) { volume in
                                 HStack {
                                     Text(volume.name)
@@ -252,22 +253,22 @@ struct HardwareHealthView: View {
                                     Text(volume.id).foregroundStyle(.secondary)
                                 }.font(.caption)
                             }
-                            Text("Các volume nằm bên trong ổ vật lý, không phải ổ cứng riêng.")
+                            Text(tr("Các volume nằm bên trong ổ vật lý, không phải ổ cứng riêng."))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                    Text(model.snapshot.diskInfo)
+                    Text(tr(model.snapshot.diskInfo))
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(10)
             }
             GroupBox("Activation Lock") {
                 VStack(alignment: .leading, spacing: 8) {
-                    value("Trạng thái", model.snapshot.activationLock)
-                    Text("Đọc từ system_profiler SPHardwareDataType; chỉ có trên máy Apple Silicon / chip T2. Đã bật = máy còn khóa tài khoản Apple của chủ cũ, không nên mua khi chưa gỡ. Chắc chắn nhất vẫn là xóa máy và kích hoạt lại.")
+                    value(tr("Trạng thái"), tr(model.snapshot.activationLock))
+                    Text(tr("Đọc từ system_profiler SPHardwareDataType; chỉ có trên máy Apple Silicon / chip T2. Đã bật = máy còn khóa tài khoản Apple của chủ cũ, không nên mua khi chưa gỡ. Chắc chắn nhất vẫn là xóa máy và kích hoạt lại."))
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(10)
             }
-            Text(model.snapshot.status).font(.caption).foregroundStyle(.secondary)
+            Text(tr(model.snapshot.status)).font(.caption).foregroundStyle(.secondary)
         }
     }
     private func value(_ name: String, _ value: String) -> some View {

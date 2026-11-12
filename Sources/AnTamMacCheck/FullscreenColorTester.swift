@@ -66,7 +66,7 @@ final class FullscreenColorTester {
         guard let w = window else { return }
         w.backgroundColor = colors[index].1
         w.contentView?.layer?.backgroundColor = colors[index].1.cgColor
-        w.statusLabel?.stringValue = "  \(index + 1)/\(colors.count): \(colors[index].0)    ← / → đổi màu    Esc thoát  "
+        w.statusLabel?.stringValue = trf("  %d/%d: %@    ← / → đổi màu    Esc thoát  ", index + 1, colors.count, tr(colors[index].0))
         onChange?(index)
     }
     private func next() {

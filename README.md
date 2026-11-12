@@ -48,6 +48,8 @@ Mở app là nó tự đọc cấu hình máy (tên máy, model ID, S/N, chip, R
 
 Nút **Giới thiệu** ở sidebar mở bảng giới thiệu shop (logo, slogan, 2 chi nhánh, bảo hành 6 tháng, vitinhantam.com, phiên bản).
 
+Nút **chuyển ngữ EN/VI** ở sidebar (hình quả cầu, dưới mục Giới thiệu) đổi toàn bộ giao diện sang tiếng Anh hoặc tiếng Việt — kể cả kết luận, lời nhắn "An Tâm nhắn bạn" (dịch thơ vần như bản PCcheck) và báo cáo JSON xuất ra. Lựa chọn được nhớ cho lần mở sau. Tên shop, địa chỉ chi nhánh và số liệu máy (tên model, S/N, SMART...) giữ nguyên vì là danh từ riêng / dữ liệu hệ thống.
+
 ### 10 bài kiểm tra
 
 - **Màn hình:** test toàn màn hình với 12 màu. Dùng phím ← / → để chuyển màu, Esc để thoát. Phải xem hết 12 màu mới xác nhận được. App không tự phát hiện điểm chết hay ám màu, bạn tự quan sát.
