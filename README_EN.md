@@ -79,6 +79,8 @@ The app asks for exactly **2 permissions**, and only when you start that test yo
 
 The app does **not** request and does not need: Screen Recording, Input Monitoring, Accessibility or Location. The keyboard and trackpad are read from events inside the app's own window, so no system permission is needed for them.
 
+The permission dialog language follows your macOS system language (English system → English text, Vietnamese system → Vietnamese text), not the in-app language button. To get English dialogs while the system is in Vietnamese, set a per-app language for the app in **System Settings → General → Language & Region** (Applications section).
+
 **If you clicked "Don't Allow" when the dialog appeared:**
 
 1. Open **System Settings → Privacy & Security → Camera** (or **Microphone**).

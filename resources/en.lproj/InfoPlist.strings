@@ -1,0 +1,6 @@
+/* Localized permission descriptions (English).
+   macOS shows these in the system Camera/Microphone prompt when the
+   system language is English. The Vietnamese originals live in
+   Info.plist (base) and vi.lproj/InfoPlist.strings. */
+"NSCameraUsageDescription" = "An Tâm  Check needs camera access when you start the webcam test yourself. No images are uploaded to any server.";
+"NSMicrophoneUsageDescription" = "An Tâm  Check needs microphone access so you can record a test and play it back on this device. The recording is only stored temporarily on the machine.";

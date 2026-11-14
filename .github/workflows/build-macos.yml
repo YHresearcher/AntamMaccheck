@@ -74,6 +74,16 @@ jobs:
         run: |
           set -euo pipefail
           test -s resources/MascotSidebar.png
+      - name: Verify localized permission descriptions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s resources/en.lproj/InfoPlist.strings
+          test -s resources/vi.lproj/InfoPlist.strings
+          grep -q 'NSCameraUsageDescription' resources/en.lproj/InfoPlist.strings
+          grep -q 'NSMicrophoneUsageDescription' resources/en.lproj/InfoPlist.strings
+          grep -q 'NSCameraUsageDescription' resources/vi.lproj/InfoPlist.strings
+          grep -q 'NSMicrophoneUsageDescription' resources/vi.lproj/InfoPlist.strings
       - name: Generate original stereo speaker-test WAV
         shell: bash
         run: |
@@ -138,6 +148,13 @@ jobs:
           # 5 icon kiểm tra đợt 2 (giữ nguyên tên file, không theo mẫu Icon*.png).
           for icon in loa_speaker webcam_camera ban_phim_keyboard trackpad microphone; do
             cp "resources/$icon.png" "$APP/Contents/Resources/"
+          done
+          # Bản dịch mô tả quyền Camera/Microphone cho hộp thoại hệ thống
+          # (ngôn ngữ hộp thoại theo ngôn ngữ hệ thống macOS, không theo
+          # nút chuyển ngữ trong app).
+          for loc in en vi; do
+            mkdir -p "$APP/Contents/Resources/$loc.lproj"
+            cp "resources/$loc.lproj/InfoPlist.strings" "$APP/Contents/Resources/$loc.lproj/"
           done
           chmod +x "$APP/Contents/MacOS/AnTamMacCheck"
           plutil -lint "$APP/Contents/Info.plist"

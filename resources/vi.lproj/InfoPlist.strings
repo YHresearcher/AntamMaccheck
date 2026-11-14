@@ -1,0 +1,5 @@
+/* Mô tả quyền (tiếng Việt) — khớp đúng câu trong Info.plist gốc.
+   macOS hiện các câu này trong hộp thoại xin quyền Camera/Microphone
+   khi ngôn ngữ hệ thống là tiếng Việt. */
+"NSCameraUsageDescription" = "An Tâm  Check cần quyền camera khi bạn tự bắt đầu bài kiểm tra webcam. Không tải hình ảnh lên máy chủ.";
+"NSMicrophoneUsageDescription" = "An Tâm  Check cần quyền microphone để bạn ghi âm thử và nghe lại trên thiết bị. Bản ghi lưu tạm trong máy.";

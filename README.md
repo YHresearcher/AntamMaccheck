@@ -79,6 +79,8 @@ App chỉ xin đúng **2 quyền**, và chỉ xin khi bạn tự bắt đầu b�
 
 App **không xin và không cần**: Screen Recording (quay màn hình), Input Monitoring (theo dõi phím hệ thống), Accessibility, Location. Bàn phím và trackpad được đọc bằng sự kiện ngay trong cửa sổ app, không cần quyền hệ thống nào thêm.
 
+Ngôn ngữ của hộp thoại xin quyền theo ngôn ngữ hệ thống macOS (máy để tiếng Anh thì hiện tiếng Anh, máy để tiếng Việt thì hiện tiếng Việt), không theo nút chuyển ngữ trong app. Muốn hộp thoại hiện tiếng Anh trong khi máy đang để tiếng Việt thì đặt ngôn ngữ riêng cho app ở **System Settings → General → Language & Region** (mục Applications).
+
 **Nếu bạn lỡ bấm "Không cho phép" (Don't Allow) lúc hộp thoại hiện lên:**
 
 1. Mở **System Settings → Privacy & Security → Camera** (hoặc **Microphone**).
