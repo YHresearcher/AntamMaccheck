@@ -21,7 +21,7 @@ The newest build is always in this repo's **Releases**. Every successful build o
 - All releases: https://github.com/YHresearcher/AntamMaccheck/releases
 - Download the latest directly (no GitHub login needed): https://github.com/YHresearcher/AntamMaccheck/releases/latest/download/AnTam-Mac-check-macOS.zip
 
-Download the zip, unzip it once to get `An Tam Mac check.app`, drag it into your Applications folder and open it.
+Download the zip, unzip it once to get `An Tam Mac check.app`. Open it and use it right away — no need to drag it into your Applications folder.
 
 ## Real images
 
@@ -68,17 +68,17 @@ This build is not Apple-signed and not notarized (only ad-hoc signed to prevent 
 2. If it is still blocked, go to **System Settings → Privacy & Security**, scroll down to Security and click **Open Anyway**, then enter your Mac password.
 3. Do not turn off Gatekeeper system-wide, and do not run as root to get past the warning.
 
-If the app quits immediately or no window appears, run it from Terminal:
+If the app quits immediately or no window appears, run it from Terminal (replace the path with where you put the app):
 
 ```bash
-"/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+"$HOME/Downloads/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 ```
 
 Copy the last error message and send it to the developers. To check the signature and your macOS version:
 
 ```bash
-codesign --verify --deep --strict --verbose=2 "/Applications/An Tam Mac check.app"
-file "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+codesign --verify --deep --strict --verbose=2 "$HOME/Downloads/An Tam Mac check.app"
+file "$HOME/Downloads/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 sw_vers -productVersion
 ```
 

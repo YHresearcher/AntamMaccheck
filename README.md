@@ -21,7 +21,7 @@ Bản mới nhất luôn nằm ở mục **Releases** của repo này. Mỗi l�
 - Xem tất cả các bản: https://github.com/YHresearcher/AntamMaccheck/releases
 - Tải thẳng bản mới nhất (không cần đăng nhập GitHub): https://github.com/YHresearcher/AntamMaccheck/releases/latest/download/AnTam-Mac-check-macOS.zip
 
-Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`, kéo vào thư mục Applications rồi mở.
+Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`. Mở app lên dùng ngay, không cần kéo vào thư mục Applications.
 
 ## Ảnh thực tế
 
@@ -68,17 +68,17 @@ Bản này chưa ký số Apple và chưa notarize (chỉ ký ad-hoc để chố
 2. Nếu vẫn bị chặn, vào **System Settings → Privacy & Security**, kéo xuống mục Security, bấm **Open Anyway** rồi nhập mật khẩu máy.
 3. Không tắt Gatekeeper toàn hệ thống, không chạy bằng quyền root để vượt qua cảnh báo.
 
-Nếu app thoát ngay hoặc không hiện cửa sổ, mở Terminal chạy:
+Nếu app thoát ngay hoặc không hiện cửa sổ, mở Terminal chạy (thay đường dẫn bằng chỗ bạn để app):
 
 ```bash
-"/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+"$HOME/Downloads/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 ```
 
 Sao chép thông báo lỗi cuối cùng gửi cho nhóm phát triển. Kiểm tra thêm chữ ký và phiên bản macOS bằng:
 
 ```bash
-codesign --verify --deep --strict --verbose=2 "/Applications/An Tam Mac check.app"
-file "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
+codesign --verify --deep --strict --verbose=2 "$HOME/Downloads/An Tam Mac check.app"
+file "$HOME/Downloads/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 sw_vers -productVersion
 ```
 
