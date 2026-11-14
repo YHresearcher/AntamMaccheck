@@ -193,6 +193,8 @@ Build trên GitHub (Actions → **Build An Tam Mac check**) chạy mỗi khi pus
 
 ## Giấy phép
 
+App này được cấp phép theo **PolyForm Noncommercial License 1.0.0** — xem file `LICENSE`. Người khác được dùng, sửa và chia sẻ app cho mục đích **phi thương mại**; muốn dùng cho mục đích thương mại thì cần xin phép Vi Tính An Tâm trước.
+
 Cách đọc pin tham khảo phương pháp chọn thuộc tính AppleSmartBattery của MacMonitor (MIT), không dùng giao diện hay cầu nối SMC riêng của họ — xem `THIRD_PARTY_NOTICES.md`. Dự án chưa nhập source của Aman Check, mac-check hay Battery Monitor. Bất kỳ mã bên thứ ba nào đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
 
 ---

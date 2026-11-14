@@ -193,6 +193,8 @@ The GitHub build (Actions → **Build An Tam Mac check**) runs on every push to 
 
 ## License
 
+This app is licensed under the **PolyForm Noncommercial License 1.0.0** — see the `LICENSE` file. Others may use, modify and share the app for **noncommercial** purposes only; commercial use requires permission from Vi Tính An Tâm first.
+
 The battery-reading method references MacMonitor's AppleSmartBattery attribute selection (MIT), without using their interface or private SMC bridge — see `THIRD_PARTY_NOTICES.md`. The project has not imported source from Aman Check, mac-check or Battery Monitor. Any third-party code added later must follow its license terms and keep its copyright notice.
 
 ---
