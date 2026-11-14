@@ -25,11 +25,27 @@ Download the zip, unzip it once to get `An Tam Mac check.app`, drag it into your
 
 ## Real images
 
-The images below are real assets from the app (the sidebar mascot, the MacBook photo on the device card, and the test icons), not redrawn illustrations:
+Real screenshots of the app running on a MacBook Pro (14-inch, 2023) M2 Pro:
+
+### Overview
 
 <p align="center">
-  <img src="resources/MacBookPhoto.png" alt="MacBook photo on the device info card" width="480">
+  <img src="docs/screenshots/overview.png" alt="Overview page — device info, MDM, Activation Lock" width="800">
 </p>
+
+### Step-by-step checks
+
+<p align="center">
+  <img src="docs/screenshots/detailed-checks.png" alt="Detailed checks page — all 10 checks passed" width="800">
+</p>
+
+### Report
+
+<p align="center">
+  <img src="docs/screenshots/report.png" alt="Report page — verdict and detailed results" width="800">
+</p>
+
+The test icons used in the app (real assets, not redrawn):
 
 <p align="center">
   <img src="resources/IconLaptop.png" width="32" alt="Screen">
@@ -43,8 +59,6 @@ The images below are real assets from the app (the sidebar mascot, the MacBook p
   <img src="resources/IconBattery.png" width="32" alt="Battery">
   <img src="resources/IconDrive.png" width="32" alt="SSD">
 </p>
-
-> Real screenshots of the three pages (Overview, Step-by-step checks, Report) will be added later — see the "Still needed" section at the end of this file.
 
 ## First launch
 
@@ -78,6 +92,13 @@ The app asks for exactly **2 permissions**, and only when you start that test yo
 | **Microphone** | When you press record in the **Microphone** test | Records a short sample and plays it back on the device so you can judge clarity yourself. The recording is only stored temporarily on the machine. |
 
 The app does **not** request and does not need: Screen Recording, Input Monitoring, Accessibility or Location. The keyboard and trackpad are read from events inside the app's own window, so no system permission is needed for them.
+
+The actual permission dialogs on macOS (in English, when the system language is English):
+
+<p align="center">
+  <img src="docs/screenshots/permission-camera.png" alt="Camera permission dialog" width="300">
+  <img src="docs/screenshots/permission-microphone.png" alt="Microphone permission dialog" width="300">
+</p>
 
 The permission dialog language follows your macOS system language (English system → English text, Vietnamese system → Vietnamese text), not the in-app language button. To get English dialogs while the system is in Vietnamese, set a per-app language for the app in **System Settings → General → Language & Region** (Applications section).
 
@@ -178,6 +199,4 @@ The battery-reading method references MacMonitor's AppleSmartBattery attribute s
 
 ## Still needed for this README
 
-- **Real screenshots** of the 3 pages (Overview, Step-by-step checks, Report) running on a real Mac — send them and they will be added to the "Real images" section.
-- **Photos of the Camera/Microphone permission dialogs** (if available) to illustrate the Privacy section.
 - **The actual Gatekeeper wording** on your Mac (it varies slightly by macOS version) — tell me if it differs from the description above.

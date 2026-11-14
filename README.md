@@ -25,11 +25,27 @@ Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`, kéo v�
 
 ## Ảnh thực tế
 
-Ảnh dưới đây là ảnh thật trong app (mascot sidebar, ảnh máy ở thẻ Thông tin Mac, và bộ icon kiểm tra), không phải ảnh minh họa vẽ lại:
+Ảnh chụp màn hình thật của app chạy trên MacBook Pro (14-inch, 2023) M2 Pro:
+
+### Tổng quan
 
 <p align="center">
-  <img src="resources/MacBookPhoto.png" alt="Ảnh MacBook trong thẻ Thông tin Mac" width="480">
+  <img src="docs/screenshots/overview.png" alt="Trang Tổng quan — thông tin máy, MDM, Activation Lock" width="800">
 </p>
+
+### Kiểm tra chi tiết
+
+<p align="center">
+  <img src="docs/screenshots/detailed-checks.png" alt="Trang Kiểm tra chi tiết — lưới 10 bài kiểm tra đều đạt" width="800">
+</p>
+
+### Báo cáo
+
+<p align="center">
+  <img src="docs/screenshots/report.png" alt="Trang Báo cáo — kết luận và kết quả chi tiết" width="800">
+</p>
+
+Bộ icon kiểm tra trong app (ảnh thật, không vẽ lại):
 
 <p align="center">
   <img src="resources/IconLaptop.png" width="32" alt="Màn hình">
@@ -43,8 +59,6 @@ Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`, kéo v�
   <img src="resources/IconBattery.png" width="32" alt="Pin">
   <img src="resources/IconDrive.png" width="32" alt="SSD">
 </p>
-
-> Ảnh chụp màn hình thực tế của 3 trang (Tổng quan, Kiểm tra chi tiết, Báo cáo) sẽ được bổ sung sau — xem mục cần bổ sung ở cuối file này.
 
 ## Mở app lần đầu
 
@@ -78,6 +92,13 @@ App chỉ xin đúng **2 quyền**, và chỉ xin khi bạn tự bắt đầu b�
 | **Microphone** | Khi bạn bấm ghi âm ở bài **Microphone** | Ghi thử rồi phát lại ngay trên máy để bạn tự nghe độ rõ. Bản ghi chỉ lưu tạm trong máy. |
 
 App **không xin và không cần**: Screen Recording (quay màn hình), Input Monitoring (theo dõi phím hệ thống), Accessibility, Location. Bàn phím và trackpad được đọc bằng sự kiện ngay trong cửa sổ app, không cần quyền hệ thống nào thêm.
+
+Hộp thoại xin quyền thực tế trên macOS (tiếng Anh, khi ngôn ngữ hệ thống là tiếng Anh):
+
+<p align="center">
+  <img src="docs/screenshots/permission-camera.png" alt="Hộp thoại xin quyền camera" width="300">
+  <img src="docs/screenshots/permission-microphone.png" alt="Hộp thoại xin quyền microphone" width="300">
+</p>
 
 Ngôn ngữ của hộp thoại xin quyền theo ngôn ngữ hệ thống macOS (máy để tiếng Anh thì hiện tiếng Anh, máy để tiếng Việt thì hiện tiếng Việt), không theo nút chuyển ngữ trong app. Muốn hộp thoại hiện tiếng Anh trong khi máy đang để tiếng Việt thì đặt ngôn ngữ riêng cho app ở **System Settings → General → Language & Region** (mục Applications).
 
@@ -178,6 +199,4 @@ Cách đọc pin tham khảo phương pháp chọn thuộc tính AppleSmartBatte
 
 ## Cần bổ sung cho README này
 
-- **Ảnh chụp màn hình thực tế** của 3 trang (Tổng quan, Kiểm tra chi tiết, Báo cáo) chạy trên Mac thật — chụp xong gửi mình, mình chèn vào mục "Ảnh thực tế" thay cho ảnh asset.
-- **Ảnh hộp thoại quyền Camera/Microphone** (nếu có) để minh họa mục Privacy.
 - **Câu chữ Gatekeeper thực tế** trên máy bạn (mỗi bản macOS hiển thị hơi khác nhau) — nếu khác với mô tả ở trên thì báo mình sửa.
