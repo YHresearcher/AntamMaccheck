@@ -1,12 +1,18 @@
+🌐 **Ngôn ngữ / Language:** Tiếng Việt | [English](README_EN.md)
+
 # An Tâm  Check
 
-Ứng dụng kiểm tra Mac cũ trước khi mua của **Vi tính An Tâm** — https://vitinhantam.com.
+<p align="center">
+  <img src="resources/MascotSidebar.png" alt="Mascot An Tâm Check — laptop cầm bảng kiểm tra" width="180">
+</p>
+
+<p align="center"><strong>Ứng dụng kiểm tra Mac cũ trước khi mua của <a href="https://vitinhantam.com">Vi tính An Tâm</a>.</strong></p>
 
 > **Bán bằng tâm để bạn yên tâm.**
 
 Mở app lên, nó tự đọc cấu hình máy rồi dẫn bạn kiểm tra từng món: màn hình, bàn phím, trackpad, loa, micro, webcam, cổng kết nối, ngoại quan, pin, ổ cứng, MDM và Activation Lock. Xong hết thì trang Báo cáo tự tổng kết lại: máy ổn hay không, còn điểm nào cần lưu ý, và một lời nhắn của An Tâm ở cuối.
 
-App viết bằng SwiftUI, chạy trên macOS 13 trở lên. Bản hiện tại là 1.2.
+App viết bằng SwiftUI, chạy trên **macOS 13 trở lên**. Bản hiện tại là **1.2** (build 5).
 
 ## Tải về
 
@@ -17,12 +23,36 @@ Bản mới nhất luôn nằm ở mục **Releases** của repo này. Mỗi l�
 
 Tải file zip về, giải nén 1 lần là có `An Tam Mac check.app`, kéo vào thư mục Applications rồi mở.
 
+## Ảnh thực tế
+
+Ảnh dưới đây là ảnh thật trong app (mascot sidebar, ảnh máy ở thẻ Thông tin Mac, và bộ icon kiểm tra), không phải ảnh minh họa vẽ lại:
+
+<p align="center">
+  <img src="resources/MacBookPhoto.png" alt="Ảnh MacBook trong thẻ Thông tin Mac" width="480">
+</p>
+
+<p align="center">
+  <img src="resources/IconLaptop.png" width="32" alt="Màn hình">
+  <img src="resources/ban_phim_keyboard.png" width="32" alt="Bàn phím">
+  <img src="resources/trackpad.png" width="32" alt="Trackpad">
+  <img src="resources/loa_speaker.png" width="32" alt="Loa">
+  <img src="resources/microphone.png" width="32" alt="Microphone">
+  <img src="resources/webcam_camera.png" width="32" alt="Webcam">
+  <img src="resources/IconBolt.png" width="32" alt="Cổng kết nối">
+  <img src="resources/IconSearch.png" width="32" alt="Ngoại quan">
+  <img src="resources/IconBattery.png" width="32" alt="Pin">
+  <img src="resources/IconDrive.png" width="32" alt="SSD">
+</p>
+
+> Ảnh chụp màn hình thực tế của 3 trang (Tổng quan, Kiểm tra chi tiết, Báo cáo) sẽ được bổ sung sau — xem mục cần bổ sung ở cuối file này.
+
 ## Mở app lần đầu
 
 Bản này chưa ký số Apple và chưa notarize (chỉ ký ad-hoc để chống sửa đổi sau khi đóng gói), nên macOS có thể chặn lúc mở. Cách mở:
 
-1. Nhấp chuột phải vào app rồi chọn **Open (Mở)**. Nếu vẫn bị chặn, vào **System Settings → Privacy & Security → Open Anyway**.
-2. Không tắt Gatekeeper toàn hệ thống, không chạy bằng quyền root để vượt qua cảnh báo.
+1. Nhấp chuột phải vào app rồi chọn **Open (Mở)**, rồi bấm **Open** trong hộp thoại xác nhận.
+2. Nếu vẫn bị chặn, vào **System Settings → Privacy & Security**, kéo xuống mục Security, bấm **Open Anyway** rồi nhập mật khẩu máy.
+3. Không tắt Gatekeeper toàn hệ thống, không chạy bằng quyền root để vượt qua cảnh báo.
 
 Nếu app thoát ngay hoặc không hiện cửa sổ, mở Terminal chạy:
 
@@ -38,6 +68,27 @@ file "/Applications/An Tam Mac check.app/Contents/MacOS/AnTamMacCheck"
 sw_vers -productVersion
 ```
 
+## Quyền riêng tư (Privacy)
+
+App chỉ xin đúng **2 quyền**, và chỉ xin khi bạn tự bắt đầu bài test đó — mở app lên không xin quyền gì cả:
+
+| Quyền | Khi nào xin | Dùng để làm gì |
+| --- | --- | --- |
+| **Camera** | Khi bạn bấm bắt đầu bài **Webcam** | Hiện hình trực tiếp để bạn tự xem độ rõ và nhiễu. Không quay, không lưu, không gửi đi đâu. |
+| **Microphone** | Khi bạn bấm ghi âm ở bài **Microphone** | Ghi thử rồi phát lại ngay trên máy để bạn tự nghe độ rõ. Bản ghi chỉ lưu tạm trong máy. |
+
+App **không xin và không cần**: Screen Recording (quay màn hình), Input Monitoring (theo dõi phím hệ thống), Accessibility, Location. Bàn phím và trackpad được đọc bằng sự kiện ngay trong cửa sổ app, không cần quyền hệ thống nào thêm.
+
+**Nếu bạn lỡ bấm "Không cho phép" (Don't Allow) lúc hộp thoại hiện lên:**
+
+1. Mở **System Settings → Privacy & Security → Camera** (hoặc **Microphone**).
+2. Bật lại công tắc cho **An Tâm Check**.
+3. Mở lại bài test đó là chạy được.
+
+Muốn thu hồi quyền lúc nào cũng được, cũng ở chỗ đó. Tắt quyền không làm hỏng app — chỉ bài test đó không chạy được cho tới khi bạn bật lại.
+
+**Dữ liệu của bạn ở yên trong máy:** app không gửi dữ liệu đi đâu. Kết quả kiểm tra chỉ lưu trong báo cáo JSON khi bạn tự bấm xuất.
+
 ## Cách dùng
 
 Mở app là nó tự đọc cấu hình máy (tên máy, model ID, S/N, chip, RAM, macOS) và tự đọc pin với ổ cứng, không tự chạy test nào khác. Sidebar có 3 mục, theo thứ tự:
@@ -52,7 +103,7 @@ Nút **chuyển ngữ EN/VI** ở sidebar (hình quả cầu, dưới mục Gi�
 
 ### 10 bài kiểm tra
 
-- **Màn hình:** test toàn màn hình với 12 màu. Dùng phím ← / → để chuyển màu, Esc để thoát. Phải xem hết 12 màu mới xác nhận được. App không tự phát hiện điểm chết hay ám màu, bạn tự quan sát.
+- **Màn hình:** test toàn màn hình với 12 màu (trắng, đen, đỏ, xanh lá, xanh dương, xám 25/50/75%, vàng, cyan, magenta, trắng ấm). Dùng phím ← / → để chuyển màu, Esc để thoát. Phải xem hết 12 màu mới xác nhận được. App không tự phát hiện điểm chết hay ám màu, bạn tự quan sát.
 - **Bàn phím:** gõ phím thật thì phím tương ứng trên bàn phím ảo sáng xanh. Cần nhận ít nhất 10 phím mới xác nhận được. Phím bổ trợ trái/phải (Caps, Shift, Ctrl, Option, Cmd, Fn) được nhận qua `flagsChanged` của macOS, vì chúng không gửi sự kiện bấm phím thường. Bàn phím MacBook tích hợp không có Ctrl phải, phím đó chỉ sáng khi dùng bàn phím rời.
 - **Trackpad:** chỉ cần di chuyển ngón tay trên trackpad, không cần đè click. Cần ít nhất 10 lượt di chuyển. Chuột rời cũng tạo chuyển động tương tự, nên việc xác nhận trackpad thật vẫn cần người kiểm tra (thử click, kéo, cuộn, đa điểm).
 - **Loa:** phát bản nhạc kiểm tra stereo 8 giây: 4 giây kênh trái trước, 4 giây kênh phải sau. Nghe từng bên xem có rè, méo hay lệch âm lượng không.
@@ -91,7 +142,7 @@ Kết luận được tổng hợp tự động từ tất cả các tab, theo t
 
 Ngưỡng pin theo Apple: dưới 80% là pin đã suy giảm, nên tính chi phí thay; trên 1000 chu kỳ là vượt mức thiết kế của MacBook.
 
-**"An Tâm nhắn bạn"** nằm ở cuối trang Báo cáo, theo đúng cách app PCcheck của shop làm: 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (máy ổn, máy dùng được, cần thương lượng, nhiều lỗi, không nên mua). Chưa đủ dữ liệu thì chưa có lời nhắn. Mascot cuối báo cáo cũng đổi theo kết quả. Kết luận tổng hợp, lời nhắn và Activation Lock đều có trong báo cáo JSON xuất ra.
+**"An Tâm nhắn bạn"** nằm ở cuối trang Báo cáo, theo đúng cách app PCcheck của shop làm: 5 nhóm thơ của shop, chọn 1 cặp cố định theo kịch bản (máy ổn, máy dùng được, cần thương lượng, nhiều lỗi, không nên mua). Chưa đủ dữ liệu thì chưa có lời nhắn. Kết luận tổng hợp, lời nhắn và Activation Lock đều có trong báo cáo JSON xuất ra.
 
 ## Giới hạn cần biết
 
@@ -120,3 +171,11 @@ Build trên GitHub (Actions → **Build An Tam Mac check**) chạy mỗi khi pus
 ## Giấy phép
 
 Cách đọc pin tham khảo phương pháp chọn thuộc tính AppleSmartBattery của MacMonitor (MIT), không dùng giao diện hay cầu nối SMC riêng của họ — xem `THIRD_PARTY_NOTICES.md`. Dự án chưa nhập source của Aman Check, mac-check hay Battery Monitor. Bất kỳ mã bên thứ ba nào đưa vào sau này phải tuân thủ điều khoản cấp phép và giữ thông báo bản quyền.
+
+---
+
+## Cần bổ sung cho README này
+
+- **Ảnh chụp màn hình thực tế** của 3 trang (Tổng quan, Kiểm tra chi tiết, Báo cáo) chạy trên Mac thật — chụp xong gửi mình, mình chèn vào mục "Ảnh thực tế" thay cho ảnh asset.
+- **Ảnh hộp thoại quyền Camera/Microphone** (nếu có) để minh họa mục Privacy.
+- **Câu chữ Gatekeeper thực tế** trên máy bạn (mỗi bản macOS hiển thị hơi khác nhau) — nếu khác với mô tả ở trên thì báo mình sửa.
